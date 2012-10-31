@@ -2,6 +2,7 @@ OSRS
 ====
 
 OpenSRS Java Client and API
+http://www.dgwave.com/orsrs/
 
 API
 ---
