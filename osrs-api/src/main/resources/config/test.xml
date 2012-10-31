@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+	<osrs>
+	    <environment>test</environment>
+	    <host>opensrs.net</host>
+	    <port>80</port>
+	    <sslPort>443</sslPort>
+	    <userName>dgwave</userName>
+	    <key>abcdef123fedcba</key>
+	</osrs>
+</config>
