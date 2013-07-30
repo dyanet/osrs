@@ -25,14 +25,8 @@ Usage
 - Use the `activeConfig.xml` to point at the active configuration, for example, test or production
 - Set your OpenSRS key and username in the test and/or production configuration
 - From within your application,
-- - get an instance of the client `OsrsClient.getInstance(false);`
-- - create a request object and set its properties
-- - read the response
-```java
-GetBalance req = new GetBalance();
-req.setRegistrantIp(null);
-OsrsResponse response = client.sendReceive(req);
-assertNotNull(response);
-System.out.println(response);
-Balance balance = ((BalanceResponse)response).getBalance();
-```
+ - get an instance of the client `OsrsClient.getInstance(false);`
+ - create a request object and set its properties `GetBalance req = new GetBalance(); req.setRegistrantIp(null);`
+ - read the response `OsrsResponse response = client.sendReceive(req); assertNotNull(response); System.out.println(response);`
+ - cast to POJO and read response properties `Balance balance = ((BalanceResponse)response).getBalance();`
+
