@@ -21,7 +21,7 @@ package com.dgwave.osrs.model;
 import java.math.BigDecimal;
 
 /**
- * @author Akber A. Choudhry
+ * @author Akber Choudhry
  */
 public class Balance {
 	BigDecimal balance;

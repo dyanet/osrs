@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Abstract Response
- * @author Akber A. Choudhry
- *
+ * 
+ * @author Akber Choudhry
  */
 public abstract class OsrsResponse {
 
@@ -86,5 +86,11 @@ public abstract class OsrsResponse {
 	public void setProtocol(String protocol) {
 		this.protocol = protocol;
 	}
-	
+
+	public String toString() {
+		return "Response action: " + action + 
+		"; object: " + object +
+		"; error code: " + errorCode + 
+		"; error message: " + errorMessage;
+	}
 }

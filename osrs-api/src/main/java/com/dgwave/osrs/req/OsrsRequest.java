@@ -25,7 +25,8 @@ import java.util.Map;
 
 /**
  * Abstract Request
- * @author Akber A. Choudhry
+ * 
+ * @author Akber Choudhry
  */
 public abstract class OsrsRequest {
 	

@@ -30,7 +30,7 @@ import java.util.Map;
 import com.dgwave.osrs.model.Domain;
 
 /**
- * @author Akber A. Choudhry
+ * @author Akber Choudhry
  */
 public class DomainResponse extends OsrsResponse {
 

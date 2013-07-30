@@ -21,7 +21,7 @@ package com.dgwave.osrs.model;
 import java.util.Date;
 
 /**
- * @author Akber A. Choudhry
+ * @author Akber Choudhry
  */
 public class DeletedDomain {
 	

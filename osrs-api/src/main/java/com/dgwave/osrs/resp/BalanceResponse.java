@@ -27,7 +27,7 @@ import java.util.Map;
 import com.dgwave.osrs.model.Balance;
 
 /**
- * @author Akber A. Choudhry
+ * @author Akber Choudhry
  */
 public class BalanceResponse extends OsrsResponse {
 

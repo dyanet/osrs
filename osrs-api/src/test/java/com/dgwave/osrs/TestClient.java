@@ -111,6 +111,7 @@ public class TestClient {
 			req.setDomain(new Domain("dgwave.com"));
 			String togo = client.getString(req);
 			assertNotNull(togo);
+			System.out.println("Request is: " + togo);
 		} catch (OsrsException e) {
 			e.printStackTrace();
 			fail ("Error while creating string from request");
@@ -124,11 +125,7 @@ public class TestClient {
 			req.setDomain(new Domain("dgwave.com"));			
 			OsrsResponse response = client.sendReceive(req);
 			assertNotNull(response);
-			System.out.println(response.getAction());
-			System.out.println(response.getObject());
-			System.out.println(response.getErrorCode());
-			System.out.println(response.getErrorMessage());
-			
+			System.out.println(response);		
 		} catch (OsrsException e) {
 			e.printStackTrace();
 			fail ("Error while creating string from request");

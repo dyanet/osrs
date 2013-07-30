@@ -35,7 +35,8 @@ import com.dgwave.osrs.resp.OsrsResponse;
 
 /**
  * Deep dive into the envelope and create the right implementation
- * @author Akber A. Choudhry
+ * 
+ * @author Akber Choudhry
  *
  */
 public class OsrsResponseFactory {

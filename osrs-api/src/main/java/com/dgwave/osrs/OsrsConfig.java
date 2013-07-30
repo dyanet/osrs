@@ -29,8 +29,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Active configuration read in from XML and exposed by static methods
  * 
- * @author Akber A. Choudhry
- *
+ * @author Akber Choudhry
  */
 public class OsrsConfig {
 	private static XMLConfiguration config;
@@ -97,7 +96,7 @@ public class OsrsConfig {
 	 */
 	private static void validateConfiguration() throws OsrsException {
 			String osrsUsername = config.getString(
-					"osrs.username", "");
+					"osrs.userName", "");
 			String osrsPassword = config.getString(
 					"osrs.password", "");
 			String osrsKey = config.getString(
@@ -119,7 +118,7 @@ public class OsrsConfig {
 
 			final String configError = "OSRS Error - Incomplete config file - Missing osrs_";
 			if ("".equals(osrsUsername)) {
-				throw new OsrsException(configError + "username");
+				throw new OsrsException(configError + "userName");
 			}
 			if ("".equals(osrsPassword)) {
 				throw new OsrsException(configError + "password");

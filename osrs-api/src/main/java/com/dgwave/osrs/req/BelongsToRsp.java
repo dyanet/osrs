@@ -25,7 +25,7 @@ import com.dgwave.osrs.model.Domain;
 import static com.dgwave.osrs.OsrsConstants.*;
 
 /**
- * @author Akber A. Choudhry
+ * @author Akber Choudhry
  *
  */
 public class BelongsToRsp extends OsrsRequest {

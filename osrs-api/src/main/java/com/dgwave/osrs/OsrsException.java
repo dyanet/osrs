@@ -19,6 +19,8 @@
 package com.dgwave.osrs;
 
 /**
+ * Runtime Exception that wraps other underlying exceptions
+ * 
  * @author Akber A. Choudhry
  */
 public class OsrsException extends RuntimeException {

@@ -22,6 +22,7 @@ import static com.dgwave.osrs.Config.OSRSCONFIG;
 import static com.dgwave.osrs.Config.OSRSDIR;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.math.BigInteger;
@@ -32,10 +33,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -54,6 +57,10 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 import com.dgwave.osrs.jaxb.Body;
 import com.dgwave.osrs.jaxb.DataBlock;
@@ -69,9 +76,7 @@ import com.dgwave.osrs.resp.OsrsResponse;
  * Singleton client that does all the low-level stuff for
  * communications.
  * 
- * 
- * @author Akber A. Choudhry
- *
+ * @author Akber Choudhry
  */
 public class OsrsClient {
 	
@@ -89,6 +94,7 @@ public class OsrsClient {
 	private final String version = "0.9";
 	private final String protocol = "XCP";
 	private JAXBContext jc = null; // multi-threaded
+	XMLReader xmlReader = null;
 	private ObjectFactory oj = null; //just factory
 	private OsrsResponseFactory orf = new OsrsResponseFactory();
 	
@@ -209,8 +215,9 @@ public class OsrsClient {
 			String concat = xml + OsrsConfig.getValue("osrs.key");
 			concat = bytesToHex(md5.digest(concat.getBytes()));
 			signature = bytesToHex(md5.digest(concat.concat(
-					OsrsConfig.getValue("osrs.privateKey")).getBytes()));
+					OsrsConfig.getValue("osrs.key")).getBytes()));
 		} catch (Exception ex) {
+			logger.warn("Error generating signature: ", ex);
 		}
 		return signature;
 	}
@@ -265,11 +272,13 @@ public class OsrsClient {
 	protected OPSEnvelope createEnvelope(String ret) throws OsrsException {
 		OPSEnvelope opsEnvelope = null;
 		try {
-			JAXBContext jc = JAXBContext.newInstance("com.dgwave.osrs.jaxb");
+
+	        InputSource inputSource = new InputSource(new StringReader(ret));
+	        SAXSource source = new SAXSource(xmlReader, inputSource);			
 			Unmarshaller u = jc.createUnmarshaller();
-			opsEnvelope = (OPSEnvelope)u.unmarshal(new StringReader(ret));
+			opsEnvelope = (OPSEnvelope)u.unmarshal(source);
 		} catch (Exception e) {
-			throw new OsrsException("Error parsing response", e);
+			throw new OsrsException("Error parsing response: " + ret, e);
 		}
 		return opsEnvelope;
 	}
@@ -297,8 +306,20 @@ public class OsrsClient {
 		try {
 			this.jc = JAXBContext.newInstance("com.dgwave.osrs.jaxb");
 			this.oj = new ObjectFactory();
-		} catch (JAXBException e) {
-			throw new OsrsException("Error creating base envelope", e);
+		    SAXParserFactory spf = SAXParserFactory.newInstance();
+	        spf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+	        spf.setNamespaceAware(true);
+	        spf.setValidating(false);
+	        xmlReader = spf.newSAXParser().getXMLReader();
+	        xmlReader.setEntityResolver(new EntityResolver() {	
+				@Override
+				 public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+					logger.debug("Ignoring DTD");
+					return new InputSource(new StringReader(""));
+				}
+			});			
+		} catch (Exception e) {
+			throw new OsrsException("JAXB Error", e);
 		}
 	}
 	
@@ -359,5 +380,5 @@ public class OsrsClient {
 			}
 		}
 		return dt;
-	}	
+	}
 }

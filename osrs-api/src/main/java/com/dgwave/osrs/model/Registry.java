@@ -19,7 +19,7 @@
 package com.dgwave.osrs.model;
 
 /**
- * @author Akber A. Choudhry
+ * @author Akber Choudhry
  */
 public enum Registry {
 	COM("Global"), NET("Global"), ORG("Global"),

@@ -31,7 +31,7 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * @author Akber A. Choudhry
+ * @author Akber Choudhry
  */
 
 @Generated(value = { "From JAXB, modified after generation" })

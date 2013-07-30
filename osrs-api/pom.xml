@@ -21,7 +21,7 @@
   <parent>
     <artifactId>osrs-parent</artifactId>
     <groupId>com.dgwave.osrs</groupId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.9.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>osrs-api</artifactId>
@@ -38,7 +38,7 @@
   	<dependency>
   	  	<groupId>org.apache.httpcomponents</groupId> 
   	  	<artifactId>httpclient</artifactId> 
-  	  	<version>4.2.2</version> 
+  	  	<version>4.2.5</version> 
   		<type>jar</type>
   		<scope>compile</scope>  	  	
   	</dependency>
@@ -51,7 +51,7 @@
   	<dependency>
   		<groupId>org.slf4j</groupId>
   		<artifactId>slf4j-api</artifactId>
-  		<version>1.6.6</version>
+  		<version>1.7.5</version>
   	</dependency>
   </dependencies>
 </project>

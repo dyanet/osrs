@@ -59,10 +59,7 @@ public class TestRequests {
 			req.setRegistrantIp(null);			
 			OsrsResponse response = client.sendReceive(req);
 			assertNotNull(response);
-			System.out.println(response.getAction());
-			System.out.println(response.getObject());
-			System.out.println(response.getErrorCode());
-			System.out.println(response.getErrorMessage());
+			System.out.println(response);
 			
 			Balance balance = ((BalanceResponse)response).getBalance();
 			System.out.println("Balance is: " + balance.getBalance());
@@ -82,10 +79,7 @@ public class TestRequests {
 			req.setDeletedTo(dfm.parse("2031-09-04 13:00:00"));
 			OsrsResponse response = client.sendReceive(req);
 			assertNotNull(response);
-			System.out.println(response.getAction());
-			System.out.println(response.getObject());
-			System.out.println(response.getErrorCode());
-			System.out.println(response.getErrorMessage());
+			System.out.println(response);
 			
 			List<DeletedDomain> delDomainList = ((DeletedDomainsResponse)response).getDeletedDomains();
 			System.out.println("Number in deleted domain list is: " + delDomainList.size());

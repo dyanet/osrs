@@ -19,9 +19,9 @@
 package com.dgwave.osrs;
 
 /**
- * @author Akber A. Choudhry
- * 
  * OSRS System Configuration
+ * 
+ * @author Akber Choudhry
  */
 public interface Config {
 
@@ -44,7 +44,7 @@ public interface Config {
 	/**
 	 * Active Config file is file that points to the OpenSRS file holding connection information
 	 * It will be loaded from  OSRSDIR + OSRSCONFIG + "activeConfig.xml";
-	 * At the minimum, it should contain <code><activeConfig>something.xml</activeConfig><code>
+	 * At the minimum, it should contain <code>&lt;activeConfig&gt;something.xml&lt;/activeConfig&gt;</code>
 	 * where 'something.xml' is a valid configuration in the OSRSCONFIG folder
 	 * 
 	 * Any change to this file should reload the system

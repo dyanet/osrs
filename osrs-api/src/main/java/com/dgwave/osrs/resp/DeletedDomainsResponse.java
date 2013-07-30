@@ -39,7 +39,7 @@ import java.util.Map;
 import com.dgwave.osrs.model.DeletedDomain;
 
 /**
- * @author Akber A. Choudhry
+ * @author Akber Choudhry
  *
  */
 public class DeletedDomainsResponse extends OsrsResponse {

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
 	<osrs>
-	    <environment>test</environment>
+	    <environment>prod</environment>
 	    <protocol>https</protocol>
-	    <host>horizon.opensrs.net</host>
+	    <host> rr-n1-tor.opensrs.net</host>
 	    <port>80</port>
 	    <sslPort>55443</sslPort>
 	    <userName>dgwave</userName>

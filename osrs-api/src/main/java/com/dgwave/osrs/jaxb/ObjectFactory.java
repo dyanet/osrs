@@ -36,7 +36,7 @@ import javax.xml.bind.annotation.XmlRegistry;
  * groups.  Factory methods for each of these are 
  * provided in this class.
  * 
- * @author Akber A. Choudhry
+ * @author Akber Choudhry
  */
 
 @Generated(value = { "From JAXB, modified after generation" })

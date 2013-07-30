@@ -19,8 +19,9 @@
 package com.dgwave.osrs;
 
 /**
- * @author Akber A. Choudhry
  * Constants used in XML messages to OpenSRS
+ * 
+ * @author Akber Choudhry
  */
 public interface OsrsConstants {
 	
