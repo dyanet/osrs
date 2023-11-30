@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-	<osrs>
-	    <environment>test</environment>
-	    <protocol>https</protocol>
-	    <host>horizon.opensrs.net</host>
-	    <port>80</port>
-	    <sslPort>55443</sslPort>
-	    <userName>dgwave</userName>
-	    <password>none</password>
-	    <key>sdf12.....skjk</key>
-	    <version>0.9</version>
-	    <baseClassVersion>0.9.1</baseClassVersion>
-	</osrs>
+  <osrs>
+      <environment>test</environment>
+      <protocol>https</protocol>
+      <host>horizon.opensrs.net</host>
+      <port>80</port>
+      <sslPort>55443</sslPort>
+      <userName>dyanet</userName>
+      <password>none</password>
+      <key>94f223b46ea7dc007ecb6a53067e999a7fb461c788de2fef17e69d006f606ddc8511287756d3516750240105e3332dc427ad199e734f4621</key>
+      <version>0.9</version>
+      <baseClassVersion>0.9.1</baseClassVersion>
+  </osrs>
 </config>

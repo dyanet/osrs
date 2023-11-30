@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright 2012, Digiwave Systems Ltd., Akber A. Choudhry,
+  Copyright 2012-2023-2023, Dyanet Inc., Akber A. Choudhry,
   and other individual contributors identified by the
   @authors tag in each source artefact.
 
@@ -17,42 +17,42 @@
   and limitations under the License.
 --> 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.dgwave.osrs</groupId>
-	<artifactId>osrs-parent</artifactId>
-	<version>0.9.1</version>
-	<packaging>pom</packaging>
-	<name>OpenSRS Parent Project</name>
-	<description>OpenSRS and Related Projects</description>
-	<url>http://www.dgwave.com/osrs/</url>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-	</properties>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.5.1</version>
-				<configuration>
-					<encoding>utf-8</encoding>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-	<modules>
-		<module>osrs-api</module>
-	</modules>
-	<organization>
-		<name>Digiwave Systems Limited</name>
-		<url>http://www.dgwave.com/</url>
-	</organization>
-	<scm>
-		<url>https://github.com/dgwave/osrs.git</url>
-	</scm>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.dgwave.osrs</groupId>
+    <artifactId>osrs-parent</artifactId>
+    <version>0.9.2</version>
+    <packaging>pom</packaging>
+    <name>OpenSRS Parent Project</name>
+    <description>OpenSRS and Related Projects</description>
+    <url>http://www.dgwave.com/osrs/</url>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <encoding>utf-8</encoding>
+                    <source>21</source>
+                    <target>21</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <modules>
+        <module>osrs-api</module>
+    </modules>
+    <organization>
+        <name>Dyanet</name>
+        <url>https://dyanet.com/</url>
+    </organization>
+    <scm>
+        <url>https://github.com/dyanet/osrs.git</url>
+    </scm>
 </project>

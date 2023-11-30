@@ -5,7 +5,7 @@ that can then be consumed in your application.
 
 OpenSRS Java Client and API
 
-Documentation: http://dgwave.github.io/osrs/
+Documentation: https://dyanet.com/osrs/
 
 API
 ---
