@@ -20,8 +20,8 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>osrs-parent</artifactId>
-    <groupId>com.dgwave.osrs</groupId>
-    <version>0.9.2</version>
+    <groupId>com.dyanet.osrs</groupId>
+    <version>0.9.3</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>osrs-api</artifactId>
@@ -29,20 +29,19 @@
   <description>Implementation of the OpenSRS XML API in Java</description>
 
   <properties>
-    <jaxb.api.version>4.0.1</jaxb.api.version>
+    <jackson.version>2.18.2</jackson.version>
   </properties>
 
   <dependencies>
     <dependency>
-        <groupId>jakarta.xml.bind</groupId>
-        <artifactId>jakarta.xml.bind-api</artifactId>
-        <version>4.0.1</version>
+        <groupId>com.fasterxml.jackson.dataformat</groupId>
+        <artifactId>jackson-dataformat-xml</artifactId>
+        <version>${jackson.version}</version>
     </dependency>
     <dependency>
-        <groupId>com.sun.xml.bind</groupId>
-        <artifactId>jaxb-impl</artifactId>
-        <version>4.0.4</version>
-        <scope>runtime</scope>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
     </dependency>
     <dependency>
         <groupId>commons-beanutils</groupId>
@@ -52,22 +51,22 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-configuration2</artifactId>
-      <version>2.7</version>
+      <version>2.11.0</version>
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>2.0.9</version>
+        <version>2.0.16</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>4.5.13</version>
+      <version>4.5.14</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.1.0</version>
+      <version>5.11.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

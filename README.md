@@ -11,7 +11,7 @@ API
 ---
 
 1. Configuration of multiple environments, for example,  `test` and `prod`
-2. JAXB Marshalling and Unmarshalling of XML and envelopes
+2. Jackson Marshalling and Unmarshalling of XML and envelopes
 3. Public certificate for SSL and MD5 signature
 3. Request and Response model for expansion to other APIs
 4. A few basic tests

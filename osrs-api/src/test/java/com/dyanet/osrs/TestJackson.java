@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023, Dyanet Inc., Akber A. Choudhry,
+ * Copyright 2012-2025, Dyanet Inc., Akber A. Choudhry,
  *   and other individual contributors identified by the
  *   @authors tag in each source artefact.
  *
@@ -19,23 +19,21 @@
 package com.dyanet.osrs;
 
 import static org.junit.jupiter.api.Assertions.fail;
-import java.io.StringReader;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import com.dyanet.osrs.jaxb.Body;
-import com.dyanet.osrs.jaxb.DataBlock;
-import com.dyanet.osrs.jaxb.DtAssoc;
-import com.dyanet.osrs.jaxb.Header;
-import com.dyanet.osrs.jaxb.Item;
-import com.dyanet.osrs.jaxb.OPSEnvelope;
-import com.dyanet.osrs.jaxb.ObjectFactory;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Marshaller;
-import jakarta.xml.bind.Unmarshaller;
 
-public class TestJaxb {
+import com.dyanet.osrs.jackson.Body;
+import com.dyanet.osrs.jackson.DataBlock;
+import com.dyanet.osrs.jackson.DtAssoc;
+import com.dyanet.osrs.jackson.Header;
+import com.dyanet.osrs.jackson.Item;
+import com.dyanet.osrs.jackson.OPSEnvelope;
+import com.dyanet.osrs.jackson.ObjectFactory;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+
+public class TestJackson {
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -48,7 +46,7 @@ public class TestJaxb {
     @Test
     public void testCreateOPSEnvelope() {
         try {
-            JAXBContext jc = JAXBContext.newInstance("com.dyanet.osrs.jaxb");
+            XmlMapper xmlMapper = new XmlMapper();
             ObjectFactory objFactory = new ObjectFactory();
             OPSEnvelope opsEnvelope = objFactory.createOPSEnvelope();
             Header header = objFactory.createHeader();
@@ -90,27 +88,19 @@ public class TestJaxb {
             
             opsEnvelope.setBody(body);
             
-            Marshaller m = jc.createMarshaller();
-            m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-            m.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
-            m.setProperty("org.glassfish.jaxb.xmlHeaders", 
-                "<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n" +
-                "<!DOCTYPE OPS_envelope SYSTEM 'ops.dtd'>");
-            
-            m.marshal(opsEnvelope, System.out);
+            String xml = xmlMapper.writeValueAsString(opsEnvelope);
+            System.out.println(xml);
 
-        } catch (JAXBException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            fail("JAXB exception in test");
+            fail("Jackson XML exception in test");
             
         }
     }
 
     @Test
     public void testParseEnvelope() {
-        String xml = "<?xml version='1.0' encoding='UTF-8' standalone='no'?>" +
-"<!DOCTYPE OPS_envelope SYSTEM 'src/main/resources/ops.dtd'>" +
-"<OPS_envelope>" +
+        String xml = "<OPS_envelope>" +
 "<header>" +
 "<version>0.9</version>" +
 "</header>" +
@@ -136,28 +126,17 @@ public class TestJaxb {
         
         OPSEnvelope opsEnvelope = null;
         try {
-            System.setProperty("enableExternalEntityProcessing", "true");
-            System.setProperty("accessExternalDTD", "file");
-            System.setProperty("javax.xml.accessExternalDTD", "file");
-            JAXBContext jc = JAXBContext.newInstance("com.dyanet.osrs.jaxb");
-            Unmarshaller u = jc.createUnmarshaller();
-            opsEnvelope = (OPSEnvelope)u.unmarshal(new StringReader(xml));
+            XmlMapper xmlMapper = new XmlMapper();
+            opsEnvelope = xmlMapper.readValue(xml, OPSEnvelope.class);
         } catch (Exception e) {
             e.printStackTrace();
             fail("unmarshalling error");
         }
 
         try {
-            JAXBContext jc = JAXBContext.newInstance("com.dyanet.osrs.jaxb");
-        Marshaller m = jc.createMarshaller();
-        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        //m.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
-        //m.setProperty("com.sun.xml.bind.xmlHeaders", 
-        //    "<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n");             
-        //m.setProperty("com.sun.xml.bind.xmlHeaders", 
-        //    "<!DOCTYPE OPS_envelope SYSTEM 'ops.dtd'>"); 
-        
-        m.marshal(opsEnvelope, System.out);        
+            XmlMapper xmlMapper = new XmlMapper();
+            String result = xmlMapper.writeValueAsString(opsEnvelope);
+            System.out.println(result);        
         } catch (Exception e) {
             e.printStackTrace();
             fail("marshalling error");

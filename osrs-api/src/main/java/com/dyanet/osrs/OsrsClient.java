@@ -47,18 +47,16 @@ import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-import com.dyanet.osrs.jaxb.Body;
-import com.dyanet.osrs.jaxb.DataBlock;
-import com.dyanet.osrs.jaxb.DtAssoc;
-import com.dyanet.osrs.jaxb.Header;
-import com.dyanet.osrs.jaxb.Item;
-import com.dyanet.osrs.jaxb.OPSEnvelope;
-import com.dyanet.osrs.jaxb.ObjectFactory;
+import com.dyanet.osrs.jackson.Body;
+import com.dyanet.osrs.jackson.DataBlock;
+import com.dyanet.osrs.jackson.DtAssoc;
+import com.dyanet.osrs.jackson.Header;
+import com.dyanet.osrs.jackson.Item;
+import com.dyanet.osrs.jackson.OPSEnvelope;
+import com.dyanet.osrs.jackson.ObjectFactory;
 import com.dyanet.osrs.req.OsrsRequest;
 import com.dyanet.osrs.resp.OsrsResponse;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Marshaller;
-import jakarta.xml.bind.Unmarshaller;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 /**
  * Singleton client that does all the low-level stuff for
@@ -81,7 +79,7 @@ public class OsrsClient {
     private String uri;
     private final String version = "0.9";
     private final String protocol = "XCP";
-    private JAXBContext jc = null; // multi-threaded
+    private XmlMapper xmlMapper = null; // multi-threaded
     XMLReader xmlReader = null;
     private ObjectFactory oj = null; //just factory
     private OsrsResponseFactory orf = new OsrsResponseFactory();
@@ -113,7 +111,7 @@ public class OsrsClient {
         .build();
 
         this.uri = "https://" + OsrsConfig.getValue("osrs.host") + ":" + OsrsConfig.getValue("osrs.sslPort") + "/";
-        initJaxb();
+        initJackson();
     }
 
     /**
@@ -204,11 +202,7 @@ public class OsrsClient {
     protected OPSEnvelope createEnvelope(String ret) throws OsrsException {
         OPSEnvelope opsEnvelope = null;
         try {
-
-            InputSource inputSource = new InputSource(new StringReader(ret));
-            SAXSource source = new SAXSource(xmlReader, inputSource);
-            Unmarshaller u = jc.createUnmarshaller();
-            opsEnvelope = (OPSEnvelope)u.unmarshal(source);
+            opsEnvelope = xmlMapper.readValue(ret, OPSEnvelope.class);
         } catch (Exception e) {
             throw new OsrsException("Error parsing response: " + ret, e);
         }
@@ -216,7 +210,7 @@ public class OsrsClient {
     }
 
     protected OPSEnvelope getEmptyEnvelope() throws OsrsException {
-        initJaxb();
+        initJackson();
         OPSEnvelope opsEnvelope = null;
 
             opsEnvelope = oj.createOPSEnvelope();
@@ -233,10 +227,10 @@ public class OsrsClient {
         return opsEnvelope;
     }
     
-    private void initJaxb() throws OsrsException {
-        if (jc != null && oj != null) return;
+    private void initJackson() throws OsrsException {
+        if (xmlMapper != null && oj != null) return;
         try {
-            this.jc = JAXBContext.newInstance("com.dyanet.osrs.jaxb");
+            this.xmlMapper = new XmlMapper();
             this.oj = new ObjectFactory();
             SAXParserFactory spf = SAXParserFactory.newInstance();
             spf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
@@ -251,7 +245,7 @@ public class OsrsClient {
                 }
             });            
         } catch (Exception e) {
-            throw new OsrsException("JAXB Error", e);
+            throw new OsrsException("Jackson XML Error", e);
         }
     }
     
@@ -277,23 +271,18 @@ public class OsrsClient {
         c.addItem(act);
         c.addItem(obj);
         c.addItem(att);
-        ((List<Object>)envelope.getBody().getDataBlock()
-            .getDtAass()).add(c);
+        envelope.getBody().getDataBlock().addDtAssoc(c);
 
         
         try {
-        Marshaller m = jc.createMarshaller();
-        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        m.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
+            String xmlContent = xmlMapper.writeValueAsString(envelope);
+            
+            // Add XML declaration and DTD
+            String xmlWithDtd = "<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n" +
+                "<!DOCTYPE OPS_envelope SYSTEM '" + OSRSDIR + OSRSCONFIG + "ops.dtd'>\n" +
+                xmlContent;
 
-            m.setProperty("org.glassfish.jaxb.xmlHeaders", 
-                "<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n" +
-                "<!DOCTYPE OPS_envelope SYSTEM '" + OSRSDIR + OSRSCONFIG + "ops.dtd'>");
-            //StringWriter writer = new StringWriter();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            m.marshal(envelope, baos);
-
-            return baos.toString();
+            return xmlWithDtd;
         } catch (Exception e) {
             throw new OsrsException("Error creating envelope from request", e);
         }

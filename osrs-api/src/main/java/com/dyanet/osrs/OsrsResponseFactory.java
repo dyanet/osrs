@@ -26,10 +26,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.dyanet.osrs.jaxb.DtArray;
-import com.dyanet.osrs.jaxb.DtAssoc;
-import com.dyanet.osrs.jaxb.Item;
-import com.dyanet.osrs.jaxb.OPSEnvelope;
+import com.dyanet.osrs.jackson.DtArray;
+import com.dyanet.osrs.jackson.DtAssoc;
+import com.dyanet.osrs.jackson.Item;
+import com.dyanet.osrs.jackson.OPSEnvelope;
 import com.dyanet.osrs.req.OsrsRequest;
 import com.dyanet.osrs.resp.OsrsResponse;
 
@@ -51,8 +51,8 @@ public class OsrsResponseFactory {
         }
         // find error code and populate
         
-        DtAssoc dt = (DtAssoc) resp.getBody().getDataBlock().getDtAass().get(0);
-        List<Object> items = dt.getDtAassi();
+        DtAssoc dt = (DtAssoc) resp.getBody().getDataBlock().getElements().get(0);
+        List<Object> items = dt.getElements();
         for (Iterator<Object> iterator = items.iterator(); iterator.hasNext();) {
             Object object = (Object) iterator.next();
             if (object instanceof Item) {
@@ -87,7 +87,7 @@ public class OsrsResponseFactory {
     public void populate(OsrsResponse response, Item outerItem) {
         if ("attributes".equals(outerItem.getKey())) { // look or \n
                         
-            processContainerList(response, outerItem.getDtAass(),null);
+            processContainerList(response, outerItem.getElements(),null);
         }    
     }
 
@@ -101,11 +101,11 @@ public class OsrsResponseFactory {
             if (obj2 instanceof DtAssoc) {
                 response.populate(
                         processItemList(response,
-                                ((DtAssoc)obj2).getDtAassi()
+                                ((DtAssoc)obj2).getElements()
                                 ), level);
             } else if (obj2 instanceof DtArray) {
                 response.populate(
-                        processItemList(response, ((DtArray)obj2).getDtAassi()
+                        processItemList(response, ((DtArray)obj2).getElements()
                                 ),level);
             } else {
                 // ignore - mostly \n
@@ -124,7 +124,7 @@ public class OsrsResponseFactory {
                 if (value != null) { // simple item value
                     assocValues.put(item.getKey(), value);
                 } else { // this is an element in one type of item
-                    processContainerList(response, item.getDtAass(),item.getKey());
+                    processContainerList(response, item.getElements(),item.getKey());
                 }
             }
         }
