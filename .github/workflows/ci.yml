@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # Runs the offline unit tests and the JaCoCo coverage gate. Integration
+      # tests are tagged 'integration' and excluded by default (no live OpenSRS
+      # credentials in CI); jacoco:report writes osrs-api/target/site/jacoco/jacoco.xml.
+      - name: Build, test and measure coverage
+        run: mvn -B verify
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: osrs-api/target/site/jacoco/jacoco.xml
+          fail_ci_if_error: false

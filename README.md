@@ -1,5 +1,8 @@
 OSRS
 ====
+[![CI](https://github.com/dyanet/osrs/actions/workflows/ci.yml/badge.svg)](https://github.com/dyanet/osrs/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/dyanet/osrs/branch/master/graph/badge.svg)](https://codecov.io/gh/dyanet/osrs)
+
 A basic framework for connecting to the OpenSRS registry, executing requests and unmarshalling responses into POJOs that can then be consumed in your application.
 
 OpenSRS Java Client and API
