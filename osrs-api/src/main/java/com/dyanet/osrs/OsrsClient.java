@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023, Dyanet Inc., Akber A. Choudhry,
+ * Copyright 2012-2026, Dyanet Inc., Akber A. Choudhry,
  *   and other individual contributors identified by the
  *   @authors tag in each source artefact.
  *
@@ -17,9 +17,6 @@
  */
 
 package com.dyanet.osrs;
-
-import static com.dyanet.osrs.Config.OSRSCONFIG;
-import static com.dyanet.osrs.Config.OSRSDIR;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -277,9 +274,10 @@ public class OsrsClient {
         try {
             String xmlContent = xmlMapper.writeValueAsString(envelope);
             
-            // Add XML declaration and DTD
+            // Add XML declaration and DTD (the parser resolves the DTD to an
+            // empty entity, so the reference is nominal).
             String xmlWithDtd = "<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n" +
-                "<!DOCTYPE OPS_envelope SYSTEM '" + OSRSDIR + OSRSCONFIG + "ops.dtd'>\n" +
+                "<!DOCTYPE OPS_envelope SYSTEM 'ops.dtd'>\n" +
                 xmlContent;
 
             return xmlWithDtd;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025, Dyanet Inc., Akber A. Choudhry,
+ * Copyright 2012-2026, Dyanet Inc., Akber A. Choudhry,
  *   and other individual contributors identified by the
  *   @authors tag in each source artefact.
  *
@@ -47,6 +47,10 @@ public class Item {
     @JacksonXmlProperty(localName = "dt_assoc")
     private List<DtAssoc> dtAssocs;
 
+    @JacksonXmlElementWrapper(useWrapping = false)
+    @JacksonXmlProperty(localName = "dt_array")
+    private List<DtArray> dtArrays;
+
     public String getKey() {
         return key;
     }
@@ -82,6 +86,17 @@ public class Item {
         this.dtAssocs = dtAssocs;
     }
 
+    public List<DtArray> getDtArrays() {
+        if (dtArrays == null) {
+            dtArrays = new ArrayList<>();
+        }
+        return dtArrays;
+    }
+
+    public void setDtArrays(List<DtArray> dtArrays) {
+        this.dtArrays = dtArrays;
+    }
+
     // For backward compatibility with the existing API
     @JsonIgnore
     public List<Object> getElements() {
@@ -89,15 +104,18 @@ public class Item {
         if (dtAssocs != null) {
             elements.addAll(dtAssocs);
         }
+        if (dtArrays != null) {
+            elements.addAll(dtArrays);
+        }
         return elements;
     }
-    
+
     public void addDtAssoc(DtAssoc obj) {
         getDtAssocs().add(obj);
     }
-    
+
     public void addDtArray(DtArray obj) {
-        // For now, we'll treat arrays as assocs for simplicity
+        getDtArrays().add(obj);
     }
     
     public void addDtScalar(DtScalar obj) {

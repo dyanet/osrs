@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023, Dyanet Inc., Akber A. Choudhry,
+ * Copyright 2012-2026, Dyanet Inc., Akber A. Choudhry,
  *   and other individual contributors identified by the
  *   @authors tag in each source artefact.
  *
@@ -18,79 +18,138 @@
 
 package com.dyanet.osrs;
 
-import static com.dyanet.osrs.Config.ACTIVECONFIG;
-import static com.dyanet.osrs.Config.OSRSCONFIG;
-import static com.dyanet.osrs.Config.OSRSDIR;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
-import org.apache.commons.configuration2.XMLConfiguration;
-import org.apache.commons.configuration2.builder.fluent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Active configuration read in from XML and exposed by static methods
- * 
+ * Active configuration, loaded once from a simple {@code .properties} file.
+ *
+ * <p>The file is resolved in this order:
+ * <ol>
+ *   <li>the system property {@code osrs.config} &mdash; either a filesystem path
+ *       or a classpath resource name, letting you point at an external file;</li>
+ *   <li>otherwise the {@code OSRS_CONFIG} environment variable, same semantics
+ *       &mdash; convenient for container/{@code .env} deployments that export
+ *       environment variables rather than pass JVM {@code -D} flags;</li>
+ *   <li>otherwise {@code osrs-<env>.properties} on the classpath, where
+ *       {@code <env>} is the system property {@code osrs.env} (default
+ *       {@code test}).</li>
+ * </ol>
+ *
+ * <p>Expected keys: {@code osrs.host}, {@code osrs.port}, {@code osrs.sslPort},
+ * {@code osrs.protocol}, {@code osrs.environment}, {@code osrs.userName},
+ * {@code osrs.password}, {@code osrs.key}, {@code osrs.version},
+ * {@code osrs.baseClassVersion}.
+ *
  * @author Akber Choudhry
  */
-public class OsrsConfig {
-    private static XMLConfiguration config;
-    private static Logger logger = LoggerFactory.getLogger(OsrsConfig.class);
+public final class OsrsConfig {
+
+    /** System property naming an explicit config file (path or classpath resource). */
+    public static final String CONFIG_PROPERTY = "osrs.config";
+    /** Environment variable naming an explicit config file, checked if {@link #CONFIG_PROPERTY} is unset. */
+    public static final String CONFIG_ENV_VAR = "OSRS_CONFIG";
+    /** System property selecting the environment when neither config override is set. */
+    public static final String ENV_PROPERTY = "osrs.env";
+    /** Environment used when {@link #ENV_PROPERTY} is unset. */
+    public static final String DEFAULT_ENV = "test";
+
+    /** Keys that must be present and non-blank for the client to run. */
+    private static final String[] REQUIRED_KEYS = {
+        "osrs.userName", "osrs.password", "osrs.key", "osrs.environment",
+        "osrs.protocol", "osrs.host", "osrs.port", "osrs.sslPort",
+        "osrs.baseClassVersion", "osrs.version"
+    };
+
+    private static final Logger logger = LoggerFactory.getLogger(OsrsConfig.class);
+
+    private static volatile Properties config;
 
     /**
-     * Internal private constructor
+     * Environment variable lookup, defaulting to the real process environment.
+     * Package-private so tests can substitute a fake lookup instead of
+     * mutating actual process environment variables (which the JDK does not
+     * support doing safely at runtime).
      */
+    static java.util.function.Function<String, String> envLookup = System::getenv;
+
     private OsrsConfig() {
-        loadConfig();
     }
 
-    /**
-     * Looks up active file, loads active file and validates it
-     */
-    private static void loadConfig() {
-        Configurations configs = new Configurations();
-        
-        try {
-            XMLConfiguration actConfig = configs.fileBasedBuilder(XMLConfiguration.class, 
-                    OSRSDIR + OSRSCONFIG + ACTIVECONFIG)
-                    .getConfiguration();
+    private static synchronized void loadConfig() {
+        if (config != null) {
+            return;
+        }
+        String resource = resolveResource();
+        Properties loaded = new Properties();
+        try (InputStream in = openStream(resource)) {
+            if (in == null) {
+                throw new OsrsException("OSRS configuration not found: " + resource);
+            }
+            loaded.load(in);
+        } catch (IOException e) {
+            throw new OsrsException("Could not read OSRS configuration: " + resource, e);
+        }
+        validate(loaded, resource);
+        config = loaded;
+        logger.info("OSRS configuration loaded from {}", resource);
+    }
 
-            String actFile = actConfig.getString("activeConfig");
-            actConfig = null; // just a reminder
-            
-            config = configs.fileBasedBuilder(XMLConfiguration.class,
-                OSRSDIR + OSRSCONFIG + actFile)
-                .getConfiguration();
+    private static String resolveResource() {
+        String override = System.getProperty(CONFIG_PROPERTY);
+        if (override != null && !override.isBlank()) {
+            return override;
+        }
+        String envVarOverride = envLookup.apply(CONFIG_ENV_VAR);
+        if (envVarOverride != null && !envVarOverride.isBlank()) {
+            return envVarOverride;
+        }
+        String env = System.getProperty(ENV_PROPERTY, DEFAULT_ENV);
+        return "osrs-" + env + ".properties";
+    }
 
-            validateConfiguration();
-            
-            logger.info("OSRS configuration loaded successfully");
-        } catch (Exception ce) {
-            logger.error("Initial Configuration could not be loaded - OSRS will not run");
-            throw new OsrsException("Configuration Problem", ce);
+    /** Try the resource as a filesystem path first, then fall back to the classpath. */
+    private static InputStream openStream(String resource) throws IOException {
+        File file = new File(resource);
+        if (file.isFile()) {
+            return new FileInputStream(file);
+        }
+        return OsrsConfig.class.getClassLoader().getResourceAsStream(resource);
+    }
+
+    private static void validate(Properties p, String resource) {
+        for (String key : REQUIRED_KEYS) {
+            String value = p.getProperty(key);
+            if (value == null || value.isBlank()) {
+                throw new OsrsException(
+                    "OSRS configuration " + resource + " is missing required key: " + key);
+            }
         }
     }
 
     /**
-     * Use for plain key->value lookups.  Nested elements in the
-     * configuration can be accessed by '.', such as <code>osrs.host</code>
-     * @param String key
-     * @return String value
+     * Look up a configuration value by key, for example {@code osrs.host}.
+     *
+     * @param key the property key
+     * @return the value, or {@code null} if absent
      */
     public static String getValue(String key) {
         if (config == null) {
             loadConfig();
         }
-
-            return config.getString(key);
+        return config.getProperty(key);
     }
 
     /**
-     * Exposes the methods of the config.
-     * Use for any complicated retrievals from the config
-     * 
-     * @return XMLConfiguration
+     * @return the raw {@link Properties} backing the configuration
      */
-    public static XMLConfiguration get() {
+    public static Properties get() {
         if (config == null) {
             loadConfig();
         }
@@ -98,61 +157,11 @@ public class OsrsConfig {
     }
 
     /**
-     * Perform minimal validation on the configuration
+     * Drop the cached configuration so the next access reloads it. Intended for
+     * tests that switch {@code osrs.env} / {@code osrs.config} / {@code OSRS_CONFIG}
+     * at runtime.
      */
-    private static void validateConfiguration() throws OsrsException {
-            String osrsUsername = config.getString(
-                    "osrs.userName", "");
-            String osrsPassword = config.getString(
-                    "osrs.password", "");
-            String osrsKey = config.getString(
-                    "osrs.key", "");
-            String osrsEnvironment = config.getString(
-                    "osrs.environment", "");
-            String osrsProtocol = config.getString(
-                    "osrs.protocol", "");
-            String osrsHost = config.getString(
-                    "osrs.host", "");
-            String osrsPort = config.getString(
-                    "osrs.port", "");
-            String osrsSslPort = config.getString(
-                    "osrs.sslPort", "");
-            String osrsBaseClassVersion = config.getString(
-                    "osrs.baseClassVersion", "");
-            String osrsVersion = config.getString(
-                    "osrs.version", "");
-
-            final String configError = "OSRS Error - Incomplete config file - Missing osrs_";
-            if ("".equals(osrsUsername)) {
-                throw new OsrsException(configError + "userName");
-            }
-            if ("".equals(osrsPassword)) {
-                throw new OsrsException(configError + "password");
-            }
-            if ("".equals(osrsKey)) {
-                throw new OsrsException(configError + "key");
-            }
-            if ("".equals(osrsEnvironment)) {
-                throw new OsrsException(configError + "environment");
-            }
-            if ("".equals(osrsProtocol)) {
-                throw new OsrsException(configError + "protocol");
-            }
-
-            if ("".equals(osrsHost)) {
-                throw new OsrsException(configError + "host");
-            }
-            if ("".equals(osrsPort)) {
-                throw new OsrsException(configError + "port");
-            }
-            if ("".equals(osrsSslPort)) {
-                throw new OsrsException(configError + "sslPort");
-            }
-            if ("".equals(osrsBaseClassVersion)) {
-                throw new OsrsException(configError + "baseClassVersion");
-            }
-            if ("".equals(osrsVersion)) {
-                throw new OsrsException(configError + "version");
-            }
+    public static void reset() {
+        config = null;
     }
 }

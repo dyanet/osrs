@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023, Dyanet Inc., Akber A. Choudhry,
+ * Copyright 2012-2026, Dyanet Inc., Akber A. Choudhry,
  *   and other individual contributors identified by the
  *   @authors tag in each source artefact.
  *
@@ -18,13 +18,13 @@
 
 package com.dyanet.osrs;
 
-import static com.dyanet.osrs.Config.OSRSDIR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import com.dyanet.osrs.jackson.DtAssoc;
 import com.dyanet.osrs.jackson.Item;
@@ -65,7 +65,7 @@ public class TestClient {
     public void testCreateEnvelope() {
         try {
             String sampleResponse = "<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n" +
-            "<!DOCTYPE OPS_envelope SYSTEM '" + OSRSDIR + "/ops.dtd'>\n" +
+            "<!DOCTYPE OPS_envelope SYSTEM 'ops.dtd'>\n" +
             "<OPS_envelope>\n" +
             "<header>\n" +
             "<version>0.9</version>\n" +
@@ -118,6 +118,7 @@ public class TestClient {
     }
     
     @Test
+    @Tag("integration")
     public void testSendReceive() {
         try {
             BelongsToRsp req = new BelongsToRsp();

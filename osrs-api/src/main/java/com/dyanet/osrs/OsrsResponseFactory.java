@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023, Dyanet Inc., Akber A. Choudhry,
+ * Copyright 2012-2026, Dyanet Inc., Akber A. Choudhry,
  *   and other individual contributors identified by the
  *   @authors tag in each source artefact.
  *
@@ -104,9 +104,27 @@ public class OsrsResponseFactory {
                                 ((DtAssoc)obj2).getElements()
                                 ), level);
             } else if (obj2 instanceof DtArray) {
-                response.populate(
-                        processItemList(response, ((DtArray)obj2).getElements()
-                                ),level);
+                // A dt_array holds a list of item wrappers, each containing a
+                // dt_assoc that describes one record. Populate one entry per
+                // record, keeping the array's level so the response can route
+                // it to the right collection (an empty array adds nothing).
+                for (Object arrElem : ((DtArray) obj2).getElements()) {
+                    List<Object> assocs;
+                    if (arrElem instanceof Item) {
+                        assocs = ((Item) arrElem).getElements();
+                    } else if (arrElem instanceof DtAssoc) {
+                        assocs = java.util.Collections.singletonList((Object) arrElem);
+                    } else {
+                        continue;
+                    }
+                    for (Object inner : assocs) {
+                        if (inner instanceof DtAssoc) {
+                            response.populate(
+                                    processItemList(response, ((DtAssoc) inner).getElements()),
+                                    level);
+                        }
+                    }
+                }
             } else {
                 // ignore - mostly \n
             }                    

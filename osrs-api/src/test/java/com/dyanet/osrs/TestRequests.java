@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023, Dyanet Inc., Akber A. Choudhry,
+ * Copyright 2012-2026, Dyanet Inc., Akber A. Choudhry,
  *   and other individual contributors identified by the
  *   @authors tag in each source artefact.
  *
@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import com.dyanet.osrs.model.Balance;
 import com.dyanet.osrs.model.DeletedDomain;
@@ -37,6 +38,7 @@ import com.dyanet.osrs.resp.DeletedDomainsResponse;
 import com.dyanet.osrs.resp.OsrsResponse;
 
 
+@Tag("integration")
 public class TestRequests {
 
     OsrsClient client;

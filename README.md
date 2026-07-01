@@ -1,7 +1,6 @@
 OSRS
 ====
-A basic framework for connecting to the OpenSRS registry, executing requests and unmarshalling responses into POJOs
-that can then be consumed in your application.
+A basic framework for connecting to the OpenSRS registry, executing requests and unmarshalling responses into POJOs that can then be consumed in your application.
 
 OpenSRS Java Client and API
 
@@ -20,13 +19,27 @@ API
 Usage
 -----
 - Checkout the project and build with Maven or download the distribution
-- Copy the `config` folder to a folder of your choice
-- Set the JVM system property `-Dosrs.config` property in your application to point to this folder
-- Use the `activeConfig.xml` to point at the active configuration, for example, test or production
-- Set your OpenSRS key and username in the test and/or production configuration
+- Configuration is a simple `.properties` file, selected in this order:
+  1. `-Dosrs.config=<path-or-classpath-resource>` &mdash; explicit JVM override
+  2. the `OSRS_CONFIG` environment variable, same semantics &mdash; convenient for containers
+     and `.env`-style deployments that export env vars instead of passing `-D` flags
+     (for example, mount a secret at `/run/secrets/osrs.properties` and
+     `export OSRS_CONFIG=/run/secrets/osrs.properties`)
+  3. otherwise `osrs-<env>.properties` on the classpath, where `<env>` is `-Dosrs.env`
+     (default `test`); `osrs-test.properties` and `osrs-prod.properties` templates ship
+     in `osrs-api/src/main/resources`
+- Set your OpenSRS key and username (`osrs.userName`, `osrs.key`) in the chosen configuration file
 - From within your application,
  - get an instance of the client `OsrsClient.getInstance(false);`
  - create a request object and set its properties `GetBalance req = new GetBalance(); req.setRegistrantIp(null);`
  - read the response `OsrsResponse response = client.sendReceive(req); assertNotNull(response); System.out.println(response);`
  - cast to POJO and read response properties `Balance balance = ((BalanceResponse)response).getBalance();`
+
+Testing
+-------
+- `mvn test` (or `mvn verify`) runs the fast, offline unit test suite and enforces a minimum
+  instruction coverage bar via JaCoCo (see `osrs-api/pom.xml`)
+- Tests tagged `integration` exercise the live OpenSRS `test` registry over the network and are
+  excluded by default; run them with `mvn verify -Pintegration` (requires valid credentials in
+  `osrs-api/src/test/resources/osrs-test.properties`)
 

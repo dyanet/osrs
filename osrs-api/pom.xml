@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright 2012-2023, Dyanet Inc., Akber A. Choudhry,
+  Copyright 2012-2026, Dyanet Inc., Akber A. Choudhry,
   and other individual contributors identified by the
   @authors tag in each source artefact.
 
@@ -30,6 +30,14 @@
 
   <properties>
     <jackson.version>2.18.2</jackson.version>
+    <jacoco.version>0.8.15</jacoco.version>
+    <!-- JUnit tag groups excluded from the default build; integration tests
+         hit the live OpenSRS test registry and are opt-in (see the
+         'integration' profile). -->
+    <test.excluded.groups>integration</test.excluded.groups>
+    <!-- Minimum instruction coverage enforced by jacoco:check (unit tests
+         only; the integration profile is not required to meet the bar). -->
+    <jacoco.coverage.minimum>0.75</jacoco.coverage.minimum>
   </properties>
 
   <dependencies>
@@ -49,11 +57,6 @@
         <version>1.9.4</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-configuration2</artifactId>
-      <version>2.11.0</version>
-    </dependency>
-    <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <version>2.0.16</version>
@@ -70,4 +73,66 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludedGroups>${test.excluded.groups}</excludedGroups>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>INSTRUCTION</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>${jacoco.coverage.minimum}</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- Run the full suite including live integration tests: mvn verify -Pintegration -->
+    <profile>
+      <id>integration</id>
+      <properties>
+        <test.excluded.groups></test.excluded.groups>
+      </properties>
+    </profile>
+  </profiles>
 </project>

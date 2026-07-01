@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023, Dyanet Inc., Akber A. Choudhry,
+ * Copyright 2012-2026, Dyanet Inc., Akber A. Choudhry,
  *   and other individual contributors identified by the
  *   @authors tag in each source artefact.
  *
@@ -64,6 +64,6 @@ public class DomainResponse extends OsrsResponse {
     return domain;
   }
   public void setDomain(Domain domain) {
-    
+    this.domain = domain;
   }
 }
