@@ -29,7 +29,7 @@
   <description>Implementation of the OpenSRS XML API in Java</description>
 
   <properties>
-    <jackson.version>2.18.2</jackson.version>
+    <jackson.version>2.18.9</jackson.version>
     <jacoco.version>0.8.15</jacoco.version>
     <!-- JUnit tag groups excluded from the default build; integration tests
          hit the live OpenSRS test registry and are opt-in (see the
