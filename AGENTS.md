@@ -44,8 +44,12 @@ The workflow skips with a notice while its secrets are missing.
   DNS TXT record on `dyanet.com` (Central checks the exact domain).
 - **Token:** generate a Central Portal user token and store it as the `CENTRAL_TOKEN_USERNAME`
   and `CENTRAL_TOKEN_PASSWORD` secrets.
-- **Signing key:** create a GPG key (RSA 3072+). Publish the public key to `keyserver.ubuntu.com`
-  or `keys.openpgp.org`, which Central checks. Store the armored secret key
+- **Signing key:** create a GPG key (Ed25519 or RSA 3072+; the BouncyCastle signer handles both,
+  and the release key `B638678F1468A7AD4062F7A59328B8D7D104B4B6` is Ed25519). Publish the public
+  key to `keyserver.ubuntu.com` or `keys.openpgp.org`, which Central checks. From WSL, where
+  `gpg --send-keys` often fails, upload with `curl --data-urlencode keytext@key.asc
+  https://keyserver.ubuntu.com/pks/add`, or `POST` JSON `{"keytext": …}` to
+  `https://keys.openpgp.org/vks/v1/upload` (the old `curl -T` upload now returns 404). Store the armored secret key
   (`gpg --armor --export-secret-keys <id>`) as `MAVEN_GPG_PRIVATE_KEY`, and its passphrase as
   `MAVEN_GPG_PASSPHRASE`.
 
