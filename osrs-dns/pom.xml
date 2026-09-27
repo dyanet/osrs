@@ -24,18 +24,18 @@
     <version>1.0.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>osrs-api</artifactId>
-  <name>OpenSRS API</name>
-  <description>Core of the OpenSRS reseller XML (XCP) API client: envelope encoding and decoding with nested dt_assoc/dt_array, request signing, HTTP transport, configuration, errors and retries, and domain lookup.</description>
+  <artifactId>osrs-dns</artifactId>
+  <name>OpenSRS DNS</name>
+  <description>OpenSRS DNS zone, DNSSEC and forwarding commands, built on osrs-api. Incubating: not published yet.</description>
   <url>https://github.com/dyanet/osrs</url>
   <properties>
-    <osrs.module.name>com.dyanet.osrs</osrs.module.name>
-    <jacoco.coverage.minimum>0.90</jacoco.coverage.minimum>
+    <osrs.module.name>com.dyanet.osrs.dns</osrs.module.name>
+    <jacoco.skip>true</jacoco.skip>
   </properties>
   <dependencies>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
+      <groupId>com.dyanet.osrs</groupId>
+      <artifactId>osrs-api</artifactId>
     </dependency>
   </dependencies>
 </project>

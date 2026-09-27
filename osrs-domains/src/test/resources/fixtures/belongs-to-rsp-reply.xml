@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no' ?>
+<!DOCTYPE OPS_envelope SYSTEM 'ops.dtd'>
+<OPS_envelope>
+ <header>
+  <version>0.9</version>
+ </header>
+ <body>
+  <data_block>
+   <dt_assoc>
+    <item key="protocol">XCP</item>
+    <item key="object">DOMAIN</item>
+    <item key="action">REPLY</item>
+    <item key="attributes">
+     <dt_assoc>
+      <item key="belongs_to_rsp">1</item>
+      <item key="domain_expdate">2023-11-01 00:49:10</item>
+     </dt_assoc>
+    </item>
+    <item key="is_success">1</item>
+    <item key="response_code">200</item>
+    <item key="response_text">Query successful</item>
+   </dt_assoc>
+  </data_block>
+ </body>
+</OPS_envelope>

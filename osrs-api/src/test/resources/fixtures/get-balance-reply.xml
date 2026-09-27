@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE OPS_envelope SYSTEM 'ops.dtd'>
+<OPS_envelope>
+  <header>
+    <version>0.9</version>
+  </header>
+  <body>
+    <data_block>
+      <dt_assoc>
+        <item key="protocol">XCP</item>
+        <item key="object">DOMAIN</item>
+        <item key="action">REPLY</item>
+        <item key="is_success">1</item>
+        <item key="attributes">
+          <dt_assoc>
+            <item key="balance">9000.01</item>
+            <item key="hold_balance">0.00</item>
+          </dt_assoc>
+        </item>
+        <item key="response_code">200</item>
+        <item key="response_text">Command successful</item>
+      </dt_assoc>
+    </data_block>
+  </body>
+</OPS_envelope>
