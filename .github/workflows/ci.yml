@@ -2,31 +2,99 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master, "release/**"]
+    paths-ignore: ["**.md", "docs/**"]
   pull_request:
+    paths-ignore: ["**.md", "docs/**"]
+  # Manual runs also execute the live integration tests (see below).
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The library targets Java 21 (maven.compiler.release); prove it on the
+        # current LTS lines.
+        java: ['21', '25']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Set up JDK 25
-        uses: actions/setup-java@v4
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: ${{ matrix.java }}
           cache: maven
 
-      # Runs the offline unit tests and the JaCoCo coverage gate. Integration
-      # tests are tagged 'integration' and excluded by default (no live OpenSRS
-      # credentials in CI); jacoco:report writes osrs-api/target/site/jacoco/jacoco.xml.
+      # Offline unit tests plus the JaCoCo coverage gate. Integration tests are
+      # tagged 'integration' and excluded by default (no live OpenSRS
+      # credentials in CI).
       - name: Build, test and measure coverage
         run: mvn -B verify
 
+      # Builds and signs exactly what a release uploads (sources + javadoc jars,
+      # GPG signatures, with a throwaway key) so a javadoc error or signing
+      # problem fails the PR instead of the release. Central's own server-side
+      # validation only happens on a real upload (release.yml waits for it).
+      - name: Dry-run the Maven Central artifacts
+        if: matrix.java == '21'
+        run: |
+          export GNUPGHOME="$(mktemp -d)"
+          printf '%%no-protection\nKey-Type: RSA\nKey-Length: 3072\nName-Real: CI dry run\nName-Email: ci@example.invalid\nExpire-Date: 1d\n%%commit\n' > "$RUNNER_TEMP/key.batch"
+          gpg --batch --gen-key "$RUNNER_TEMP/key.batch"
+          export MAVEN_GPG_KEY="$(gpg --armor --export-secret-keys ci@example.invalid)"
+          mvn -B -Prelease verify -DskipTests
+          for f in osrs-api/target/osrs-api-*.jar osrs-api/target/osrs-api-*.pom target/osrs-parent-*.pom; do
+            [ -e "$f" ] || continue
+            gpg --verify "$f.asc" "$f" 2>/dev/null && echo "signed: $f" || { echo "::error::missing or bad signature for $f"; exit 1; }
+          done
+          ls osrs-api/target/osrs-api-*-sources.jar osrs-api/target/osrs-api-*-javadoc.jar
+
       - name: Upload coverage to Codecov
+        if: matrix.java == '21'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: osrs-api/target/site/jacoco/jacoco.xml
           fail_ci_if_error: false
+
+  # Live tests against the OpenSRS test (horizon) registry. Manual only
+  # (Actions > CI > Run workflow): they need the OPENSRS_API_KEY secret, and
+  # OpenSRS API keys are usually restricted to allowlisted IPs, which GitHub's
+  # hosted runners don't have; a refused connection here usually means the key's
+  # IP access rules, not a code problem.
+  integration:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run integration tests against horizon.opensrs.net
+        env:
+          OPENSRS_API_KEY: ${{ secrets.OPENSRS_API_KEY }}
+        run: |
+          if [ -z "$OPENSRS_API_KEY" ]; then
+            echo "::error::The OPENSRS_API_KEY secret is not set."; exit 1
+          fi
+          export OSRS_CONFIG="$RUNNER_TEMP/osrs-test.properties"
+          umask 077
+          # Test-environment config; the key comes from the secret and the file
+          # lives outside the workspace, so it is never committed or uploaded.
+          sed -E "s|^osrs\.key=.*|osrs.key=${OPENSRS_API_KEY}|" \
+            osrs-api/src/test/resources/osrs-test.properties > "$OSRS_CONFIG"
+          mvn -B verify -Pintegration

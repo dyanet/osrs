@@ -21,15 +21,15 @@
   <parent>
     <artifactId>osrs-parent</artifactId>
     <groupId>com.dyanet.osrs</groupId>
-    <version>0.9.3</version>
+    <version>0.9.4</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>osrs-api</artifactId>
   <name>OpenSRS API</name>
   <description>Implementation of the OpenSRS XML API in Java</description>
+  <url>https://github.com/dyanet/osrs</url>
 
   <properties>
-    <jackson.version>2.18.2</jackson.version>
     <jacoco.version>0.8.15</jacoco.version>
     <!-- JUnit tag groups excluded from the default build; integration tests
          hit the live OpenSRS test registry and are opt-in (see the
@@ -41,25 +41,19 @@
   </properties>
 
   <dependencies>
+    <!-- Jackson versions come from jackson-bom in the parent. -->
     <dependency>
         <groupId>com.fasterxml.jackson.dataformat</groupId>
         <artifactId>jackson-dataformat-xml</artifactId>
-        <version>${jackson.version}</version>
     </dependency>
     <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>commons-beanutils</groupId>
-        <artifactId>commons-beanutils</artifactId>
-        <version>1.9.4</version>
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>2.0.16</version>
+        <version>2.0.20</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
@@ -69,7 +63,6 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.11.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

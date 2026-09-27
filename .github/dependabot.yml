@@ -1,0 +1,23 @@
+# Grouped weekly updates. Security updates are raised immediately regardless.
+# Major versions are not proposed automatically (e.g. Jackson 3 changes the
+# group id and packages); they're evaluated in the monthly security pass.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      maven:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
