@@ -19,14 +19,10 @@
 package com.dyanet.osrs.domains;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.dyanet.osrs.OsrsApiException;
 import com.dyanet.osrs.OsrsClient;
 import com.dyanet.osrs.xcp.XcpData;
 import com.dyanet.osrs.xcp.XcpRequest;
@@ -37,20 +33,18 @@ import com.dyanet.osrs.xcp.XcpResponse;
  *
  * <pre>{@code
  * Domains domains = Domains.on(client);
- * Balance b = domains.balance();
- * RspOwnership o = domains.belongsToRsp("example.com");
  * DeletedDomainsPage p = domains.deletedDomains(DeletedDomainsQuery.all());
  * }</pre>
  *
- * <p>Availability checks ({@code LOOKUP}) are in {@code osrs-api}: {@link OsrsClient#lookup(String)}.
+ * <p>The basic commands that belong to no family are in {@code osrs-api}:
+ * {@link OsrsClient#lookup(String)}, {@link OsrsClient#balance()} and
+ * {@link OsrsClient#belongsToRsp(String)}.
  * Failures with a known domain response code throw {@link DomainException}.
  */
 public final class Domains {
 
     /** The XCP object of every command here. */
     public static final String OBJECT = "DOMAIN";
-
-    private static final DateTimeFormatter EXPDATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final OsrsClient client;
 
@@ -68,44 +62,6 @@ public final class Domains {
 
     private XcpResponse call(XcpRequest request) {
         return client.execute(request, DomainException.MAPPER);
-    }
-
-    /**
-     * The reseller account balance ({@code GET_BALANCE}).
-     *
-     * @return the balance
-     */
-    public Balance balance() {
-        XcpData a = call(XcpRequest.builder(OBJECT, "GET_BALANCE").idempotent(true).build())
-            .getAttributes();
-        return new Balance(
-            a.getDecimal("balance").orElseThrow(() -> missing("GET_BALANCE", "balance")),
-            a.getDecimal("hold_balance").orElse(java.math.BigDecimal.ZERO));
-    }
-
-    /**
-     * Whether a domain is managed by this reseller ({@code BELONGS_TO_RSP}). Domains OpenSRS
-     * doesn't manage, and expired domains past their grace period, report {@code false}, even
-     * when OpenSRS answers with an "Unknown Domain" error.
-     *
-     * @param domain the domain name
-     * @return the answer
-     */
-    public RspOwnership belongsToRsp(String domain) {
-        XcpRequest req = XcpRequest.builder(OBJECT, "BELONGS_TO_RSP")
-            .attribute("domain", Objects.requireNonNull(domain, "domain")).idempotent(true).build();
-        XcpResponse r = client.send(req);
-        XcpData a = r.getAttributes();
-        Boolean belongs = a.getFlag("belongs_to_rsp").orElse(null);
-        if (belongs == null) {
-            if (!r.isSuccess()) {
-                throw client.failure(r, DomainException.MAPPER);
-            }
-            throw missing("BELONGS_TO_RSP", "belongs_to_rsp");
-        }
-        LocalDateTime expiry = belongs
-            ? a.getString("domain_expdate").map(Domains::parseExpdate).orElse(null) : null;
-        return new RspOwnership(domain, belongs, expiry);
     }
 
     /**
@@ -132,15 +88,4 @@ public final class Domains {
             List.copyOf(rows));
     }
 
-    static LocalDateTime parseExpdate(String s) {
-        try {
-            return LocalDateTime.parse(s.trim(), EXPDATE);
-        } catch (DateTimeParseException e) {
-            return null;
-        }
-    }
-
-    private static OsrsApiException missing(String action, String attribute) {
-        return new OsrsApiException("OpenSRS " + OBJECT + " " + action + " reply has no " + attribute, null);
-    }
 }

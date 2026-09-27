@@ -10,8 +10,8 @@ One repo, one version, separate artifacts:
 | Module | Role | Published |
 |---|---|---|
 | `osrs-parent` (root POM) | Parent **and BOM**: its `dependencyManagement` lists the published `com.dyanet.osrs` artifacts and their runtime deps (slf4j). Test deps go in `<dependencies>`, never in `dependencyManagement`, so importing the BOM doesn't pin consumers' test libraries. | yes |
-| `osrs-api` | The base every other module uses: `XcpCodec` (nested `dt_assoc`/`dt_array`, XXE-safe StAX parser), `OsrsSignature`, `Transport` (`JdkHttpTransport`, `StubTransport` for tests), `OsrsConfig`, `OsrsClient` (send/execute, retries, error mappers), the generic exceptions, and `lookup` (the only command kept here). Runtime deps: slf4j-api only. | yes |
-| `osrs-domains` | Domain commands (`Domains`): balance, belongs_to_rsp, deleted domains; registration/renewal/management go here. `DomainException` maps domain response codes. | yes |
+| `osrs-api` | The base every other module uses: `XcpCodec` (nested `dt_assoc`/`dt_array`, XXE-safe StAX parser), `OsrsSignature`, `Transport` (`JdkHttpTransport`, `StubTransport` for tests), `OsrsConfig`, `OsrsClient` (send/execute, retries, error mappers), the generic exceptions, and the basic commands that belong to no family: `lookup`, `balance` (GET_BALANCE) and `belongsToRsp`. Only add a command here if it is a cheap, account-level read every family needs. Runtime deps: slf4j-api only. | yes |
+| `osrs-domains` | Domain commands (`Domains`): deleted domains; registration/renewal/management go here. `DomainException` maps domain response codes. | yes |
 | `osrs-transfers`, `osrs-dns` | Command families being written. | no (`incubating` profile) |
 
 Rules:

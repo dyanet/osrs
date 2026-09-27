@@ -26,7 +26,7 @@
   </parent>
   <artifactId>osrs-domains</artifactId>
   <name>OpenSRS Domains</name>
-  <description>OpenSRS domain commands (account balance, domain ownership, deleted domains; registration, renewal and management to follow), built on osrs-api.</description>
+  <description>OpenSRS domain commands (deleted domains; registration, renewal and management to follow), built on osrs-api.</description>
   <url>https://github.com/dyanet/osrs</url>
   <properties>
     <osrs.module.name>com.dyanet.osrs.domains</osrs.module.name>

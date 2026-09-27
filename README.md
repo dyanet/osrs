@@ -13,8 +13,8 @@ All artifacts share the group `com.dyanet.osrs` and one version. Requires Java 2
 
 | artifactId | What it covers |
 |---|---|
-| `osrs-api` | The base: XML envelope encoding/decoding (nested `dt_assoc`/`dt_array`), request signing, HTTPS transport, configuration, errors, retries, and domain `lookup`. Only runtime dependency: `slf4j-api`. |
-| `osrs-domains` | Domain commands: account balance, `belongs_to_rsp`, deleted domains. |
+| `osrs-api` | The base: XML envelope encoding/decoding (nested `dt_assoc`/`dt_array`), request signing, HTTPS transport, configuration, errors, retries, and the basic commands that belong to no family: domain `lookup`, account `balance`, `belongsToRsp`. Only runtime dependency: `slf4j-api`. |
+| `osrs-domains` | Domain commands: deleted domains so far; registration, renewal and management to follow. |
 | `osrs-parent` | Parent POM, also usable as a BOM to keep versions aligned. |
 
 More command families (transfers, DNS) are on the way; this README will get the full list when
@@ -51,7 +51,9 @@ try (OsrsClient client = OsrsClient.builder()
         .config(OsrsConfig.test("your_reseller_username", apiKey))   // or OsrsConfig.live(...)
         .build()) {
     LookupResult r = client.lookup("example.com");                   // osrs-api
-    Balance balance = Domains.on(client).balance();                  // osrs-domains
+    Balance balance = client.balance();                              // osrs-api
+    DeletedDomainsPage gone = Domains.on(client)                     // osrs-domains
+        .deletedDomains(DeletedDomainsQuery.all());
 }
 ```
 

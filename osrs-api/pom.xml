@@ -26,7 +26,7 @@
   </parent>
   <artifactId>osrs-api</artifactId>
   <name>OpenSRS API</name>
-  <description>Core of the OpenSRS reseller XML (XCP) API client: envelope encoding and decoding with nested dt_assoc/dt_array, request signing, HTTP transport, configuration, errors and retries, and domain lookup.</description>
+  <description>Core of the OpenSRS reseller XML (XCP) API client: envelope encoding and decoding with nested dt_assoc/dt_array, request signing, HTTP transport, configuration, errors and retries, and the basic commands lookup, balance and belongs_to_rsp.</description>
   <url>https://github.com/dyanet/osrs</url>
   <properties>
     <osrs.module.name>com.dyanet.osrs</osrs.module.name>

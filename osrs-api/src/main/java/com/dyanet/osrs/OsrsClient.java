@@ -19,8 +19,12 @@
 package com.dyanet.osrs;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -32,14 +36,16 @@ import com.dyanet.osrs.transport.JdkHttpTransport;
 import com.dyanet.osrs.transport.Transport;
 import com.dyanet.osrs.xcp.OsrsSignature;
 import com.dyanet.osrs.xcp.XcpCodec;
+import com.dyanet.osrs.xcp.XcpData;
 import com.dyanet.osrs.xcp.XcpRequest;
 import com.dyanet.osrs.xcp.XcpResponse;
 
 /**
  * Client for the OpenSRS reseller XML (XCP) API: it encodes, signs and sends commands and
  * decodes the replies. Command families (domains, transfers, DNS) are separate artifacts built
- * on this class; on its own it can send any {@link XcpRequest} and do a domain
- * {@linkplain #lookup(String) lookup}.
+ * on this class. On its own it can send any {@link XcpRequest}, and it has the basic commands
+ * that belong to no family: {@linkplain #lookup(String) lookup},
+ * {@linkplain #balance() balance} and {@linkplain #belongsToRsp(String) belongs_to_rsp}.
  *
  * <pre>{@code
  * try (OsrsClient client = OsrsClient.builder()
@@ -57,6 +63,8 @@ import com.dyanet.osrs.xcp.XcpResponse;
 public final class OsrsClient implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(OsrsClient.class);
+
+    private static final DateTimeFormatter EXPDATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /** Built-in mapping of failures common to every command family. */
     static final OsrsErrorMapper BUILT_IN_ERRORS = r -> {
@@ -199,6 +207,56 @@ public final class OsrsClient implements AutoCloseable {
             b.attribute("no_cache", true);
         }
         return LookupResult.from(domain, execute(b.build()));
+    }
+
+    /**
+     * The reseller account's funds ({@code DOMAIN GET_BALANCE}). Also the cheapest way to check
+     * that the credentials and IP allowlist work.
+     *
+     * @return the balance
+     */
+    public Balance balance() {
+        XcpData a = execute(XcpRequest.builder("DOMAIN", "GET_BALANCE").idempotent(true).build())
+            .getAttributes();
+        return new Balance(
+            a.getDecimal("balance").orElseThrow(() -> missing("GET_BALANCE", "balance")),
+            a.getDecimal("hold_balance").orElse(BigDecimal.ZERO));
+    }
+
+    /**
+     * Whether a domain is managed by this reseller ({@code DOMAIN BELONGS_TO_RSP}). Domains
+     * OpenSRS doesn't manage, and expired domains past their grace period, report {@code false},
+     * even when OpenSRS answers with an "Unknown Domain" error.
+     *
+     * @param domain the domain name
+     * @return the answer
+     */
+    public RspOwnership belongsToRsp(String domain) {
+        XcpResponse r = send(XcpRequest.builder("DOMAIN", "BELONGS_TO_RSP")
+            .attribute("domain", Objects.requireNonNull(domain, "domain")).idempotent(true).build());
+        XcpData a = r.getAttributes();
+        Boolean belongs = a.getFlag("belongs_to_rsp").orElse(null);
+        if (belongs == null) {
+            if (!r.isSuccess()) {
+                throw failure(r, OsrsErrorMapper.none());
+            }
+            throw missing("BELONGS_TO_RSP", "belongs_to_rsp");
+        }
+        LocalDateTime expiry = belongs
+            ? a.getString("domain_expdate").map(OsrsClient::parseExpdate).orElse(null) : null;
+        return new RspOwnership(domain, belongs, expiry);
+    }
+
+    static LocalDateTime parseExpdate(String s) {
+        try {
+            return LocalDateTime.parse(s.trim(), EXPDATE);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private static OsrsApiException missing(String action, String attribute) {
+        return new OsrsApiException("OpenSRS DOMAIN " + action + " reply has no " + attribute, null);
     }
 
     /**

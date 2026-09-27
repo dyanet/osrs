@@ -16,7 +16,7 @@
  *   and limitations under the License.
  */
 
-package com.dyanet.osrs.domains;
+package com.dyanet.osrs;
 
 import java.time.LocalDateTime;
 

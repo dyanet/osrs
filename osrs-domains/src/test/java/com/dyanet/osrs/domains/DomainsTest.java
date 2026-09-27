@@ -21,17 +21,14 @@ package com.dyanet.osrs.domains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -60,49 +57,6 @@ class DomainsTest {
 
     private static String fail(int code, String text) {
         return StubTransport.reply(false, code, text, null);
-    }
-
-    @Test
-    void balanceFromTheDocumentedReply() {
-        StubTransport stub = StubTransport.replying(fixture("get-balance-reply.xml"));
-        Balance b = domains(stub).balance();
-        assertEquals(new BigDecimal("9000.01"), b.balance());
-        assertEquals(new BigDecimal("0.00"), b.holdBalance());
-        assertEquals(new BigDecimal("9000.01"), b.available());
-        XcpData sent = stub.lastRequest().decoded();
-        assertEquals("DOMAIN", sent.getString("object").orElseThrow());
-        assertEquals("GET_BALANCE", sent.getString("action").orElseThrow());
-    }
-
-    @Test
-    void balanceWithoutTheFieldIsAnError() {
-        StubTransport stub = StubTransport.replying(StubTransport.reply(true, 200, "ok", Map.of()));
-        assertThrows(OsrsApiException.class, () -> domains(stub).balance());
-    }
-
-    @Test
-    void belongsToRspFromTheDocumentedReply() {
-        StubTransport stub = StubTransport.replying(fixture("belongs-to-rsp-reply.xml"));
-        RspOwnership o = domains(stub).belongsToRsp("example.com");
-        assertTrue(o.belongs());
-        assertEquals(LocalDateTime.of(2023, 11, 1, 0, 49, 10), o.expiryDate());
-        assertEquals("example.com", stub.lastRequest().decoded().getString("attributes", "domain").orElseThrow());
-    }
-
-    @Test
-    void unknownDomainsReportFalseEvenOnFailure() {
-        StubTransport stub = StubTransport.replying(
-            StubTransport.reply(false, 465, "Unknown Domain", Map.of("belongs_to_rsp", "0")),
-            StubTransport.reply(true, 200, "ok", Map.of("belongs_to_rsp", "1", "domain_expdate", "garbage")),
-            fail(410, "Reseller authentication error"),
-            StubTransport.reply(true, 200, "ok", Map.of()));
-        Domains d = domains(stub);
-        RspOwnership o = d.belongsToRsp("gone.com");
-        assertFalse(o.belongs());
-        assertNull(o.expiryDate());
-        assertNull(d.belongsToRsp("odd.com").expiryDate());
-        assertThrows(OsrsAuthenticationException.class, () -> d.belongsToRsp("x.com"));
-        assertThrows(OsrsApiException.class, () -> d.belongsToRsp("y.com"));
     }
 
     @Test

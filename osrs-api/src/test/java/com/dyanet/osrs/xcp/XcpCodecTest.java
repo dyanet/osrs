@@ -40,9 +40,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.dyanet.osrs.OsrsProtocolException;
 
-class XcpCodecTest {
+public class XcpCodecTest {
 
-    static String fixture(String name) {
+    public static String fixture(String name) {
         try (InputStream in = XcpCodecTest.class.getResourceAsStream("/fixtures/" + name)) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
