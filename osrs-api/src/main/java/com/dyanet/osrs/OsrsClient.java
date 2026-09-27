@@ -45,7 +45,12 @@ import com.dyanet.osrs.xcp.XcpResponse;
  * decodes the replies. Command families (domains, transfers, DNS) are separate artifacts built
  * on this class. On its own it can send any {@link XcpRequest}, and it has the basic commands
  * that belong to no family: {@linkplain #lookup(String) lookup},
+ * {@linkplain #suggest(NameSuggestQuery) name_suggest},
+ * {@linkplain #price(String, int, PriceQuote.PriceType) get_price},
  * {@linkplain #balance() balance} and {@linkplain #belongsToRsp(String) belongs_to_rsp}.
+ *
+ * <p>Calls on one client may run concurrently. To send commands strictly one after another,
+ * stopping at the first failure, use an {@link OsrsSession} ({@link #openSession(String)}).
  *
  * <pre>{@code
  * try (OsrsClient client = OsrsClient.builder()
@@ -210,6 +215,42 @@ public final class OsrsClient implements AutoCloseable {
     }
 
     /**
+     * Searches for a name across TLDs ({@code DOMAIN NAME_SUGGEST}): exact-match availability,
+     * suggestions and premium names, depending on the query's services.
+     *
+     * @param query what to search for
+     * @return the results per service
+     */
+    public NameSuggestResult suggest(NameSuggestQuery query) {
+        return NameSuggestResult.from(execute(XcpRequest.builder("DOMAIN", "NAME_SUGGEST")
+            .attributes(query.attributes()).idempotent(true).build()));
+    }
+
+    /**
+     * The price of registering, renewing, transferring or trading a domain
+     * ({@code DOMAIN GET_PRICE}), premium names included.
+     *
+     * @param domain the domain name
+     * @param period years, at least 1
+     * @param type   what to price
+     * @return the price in the reseller account's currency
+     */
+    public PriceQuote price(String domain, int period, PriceQuote.PriceType type) {
+        if (period < 1) {
+            throw new IllegalArgumentException("period must be at least 1");
+        }
+        XcpData a = execute(XcpRequest.builder("DOMAIN", "GET_PRICE")
+            .attribute("domain", Objects.requireNonNull(domain, "domain"))
+            .attribute("period", period)
+            .attribute("reg_type", Objects.requireNonNull(type, "type").wireValue())
+            .idempotent(true).build()).getAttributes();
+        return new PriceQuote(domain, period, type,
+            a.getDecimal("price").orElseThrow(() -> missing("GET_PRICE", "price")),
+            a.getFlag("is_registry_premium").orElse(null),
+            a.getString("registry_premium_group").orElse(null));
+    }
+
+    /**
      * The reseller account's funds ({@code DOMAIN GET_BALANCE}). Also the cheapest way to check
      * that the credentials and IP allowlist work.
      *
@@ -310,6 +351,17 @@ public final class OsrsClient implements AutoCloseable {
                 }
             }
         }
+    }
+
+    /**
+     * Opens a queue that sends commands one at a time, in order, and cancels the rest if one
+     * fails. See {@link OsrsSession}.
+     *
+     * @param name a short name used in messages (e.g. an order number or user)
+     * @return the session
+     */
+    public OsrsSession openSession(String name) {
+        return new OsrsSession(this, name);
     }
 
     /** Closes the transport (and its connections). */

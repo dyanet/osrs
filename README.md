@@ -13,7 +13,7 @@ All artifacts share the group `com.dyanet.osrs` and one version. Requires Java 2
 
 | artifactId | What it covers |
 |---|---|
-| `osrs-api` | The base: XML envelope encoding/decoding (nested `dt_assoc`/`dt_array`), request signing, HTTPS transport, configuration, errors, retries, and the basic commands that belong to no family: domain `lookup`, account `balance`, `belongsToRsp`. Only runtime dependency: `slf4j-api`. |
+| `osrs-api` | The base: XML envelope encoding/decoding (nested `dt_assoc`/`dt_array`), request signing, HTTPS transport, configuration, errors, retries, the basic commands that belong to no family (domain `lookup`, `suggest` (name_suggest), `price`, account `balance`, `belongsToRsp`), and `OsrsSession`, an in-order request queue. Only runtime dependency: `slf4j-api`. |
 | `osrs-domains` | Domain commands: deleted domains so far; registration, renewal and management to follow. |
 | `osrs-parent` | Parent POM, also usable as a BOM to keep versions aligned. |
 
@@ -51,11 +51,33 @@ try (OsrsClient client = OsrsClient.builder()
         .config(OsrsConfig.test("your_reseller_username", apiKey))   // or OsrsConfig.live(...)
         .build()) {
     LookupResult r = client.lookup("example.com");                   // osrs-api
+    PriceQuote p = client.price("example.com", 1, PriceType.NEW);    // osrs-api
+    NameSuggestResult ideas = client.suggest(NameSuggestQuery.of("example", ".com", ".net"));
     Balance balance = client.balance();                              // osrs-api
     DeletedDomainsPage gone = Domains.on(client)                     // osrs-domains
         .deletedDomains(DeletedDomainsQuery.all());
 }
 ```
+
+### Sending requests in order
+
+Calls on an `OsrsClient` may run in parallel. When requests depend on each other, send them
+through an `OsrsSession`: it runs them strictly one at a time, in the order submitted, so a slow
+OpenSRS never has several of them in flight. If one fails, everything queued after it is
+cancelled (not sent), and the session reports it in plain language:
+
+```java
+try (OsrsSession session = client.openSession("order 1042")) {
+    session.onFlush(flush -> showToUser(flush.message()));
+    session.submit("register example.com", c -> /* a family command */ c.balance());
+    session.submit(XcpRequest.builder("DOMAIN", "GET_BALANCE").build());
+    session.drain();
+}
+```
+
+> The request "register example.com" did not go through (OpenSRS said: Registration Failed:
+> over quota, code 440). To keep your account consistent, all 2 requests waiting after it were
+> cancelled and not sent: ... Fix the problem, then send them again.
 
 Configuration can also come from a `.properties` file with `OsrsConfig.load()` (or
 `OsrsClient.fromDefaultConfig()`), found in this order:
@@ -69,7 +91,8 @@ test (`horizon.opensrs.net`) and live keys differ, and the live host only accept
 Failures are unchecked exceptions: `OsrsApiException` (OpenSRS reported a failure; carries the
 response code and text), with `OsrsAuthenticationException`, `OsrsUnavailableException` and
 `DomainException` for known codes; `OsrsTransportException` and `OsrsProtocolException` when no
-valid reply arrived.
+valid reply arrived; `OsrsRequestCancelledException` for session requests cancelled after an
+earlier failure.
 
 Testing
 -------

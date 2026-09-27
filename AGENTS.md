@@ -10,7 +10,7 @@ One repo, one version, separate artifacts:
 | Module | Role | Published |
 |---|---|---|
 | `osrs-parent` (root POM) | Parent **and BOM**: its `dependencyManagement` lists the published `com.dyanet.osrs` artifacts and their runtime deps (slf4j). Test deps go in `<dependencies>`, never in `dependencyManagement`, so importing the BOM doesn't pin consumers' test libraries. | yes |
-| `osrs-api` | The base every other module uses: `XcpCodec` (nested `dt_assoc`/`dt_array`, XXE-safe StAX parser), `OsrsSignature`, `Transport` (`JdkHttpTransport`, `StubTransport` for tests), `OsrsConfig`, `OsrsClient` (send/execute, retries, error mappers), the generic exceptions, and the basic commands that belong to no family: `lookup`, `balance` (GET_BALANCE) and `belongsToRsp`. Only add a command here if it is a cheap, account-level read every family needs. Runtime deps: slf4j-api only. | yes |
+| `osrs-api` | The base every other module uses: `XcpCodec` (nested `dt_assoc`/`dt_array`, XXE-safe StAX parser), `OsrsSignature`, `Transport` (`JdkHttpTransport`, `StubTransport` for tests), `OsrsConfig`, `OsrsClient` (send/execute, retries, error mappers), the generic exceptions, `OsrsSession` (in-order queue), and the basic commands that belong to no family: `lookup`, `suggest` (NAME_SUGGEST), `price` (GET_PRICE), `balance` (GET_BALANCE) and `belongsToRsp`. Only add a command here if it is a cheap read that every family needs. `get (userinfo)` looked like one but isn't: it reports a domain's registrant-profile user and permissions, so it belongs with the domain/user commands. Runtime deps: slf4j-api only. | yes |
 | `osrs-domains` | Domain commands (`Domains`): deleted domains; registration/renewal/management go here. `DomainException` maps domain response codes. | yes |
 | `osrs-transfers`, `osrs-dns` | Command families being written. | no (`incubating` profile) |
 
@@ -25,6 +25,10 @@ Rules:
   half-done reaches Central. To publish one: move it to the default `<modules>`, add it to the
   parent's `dependencyManagement`, add it to CI's dry-run loop and the Codecov `files`, and
   remove its `jacoco.skip`.
+- `OsrsSession` runs one command at a time in submission order; any exception empties the
+  rest of that session's queue (futures fail with `OsrsRequestCancelledException`, listeners get
+  a `QueueFlush` whose `message()` is written for end users). Keep those messages plain and
+  test their exact wording. Direct calls on `OsrsClient` stay concurrent.
 - Only commands marked `idempotent(true)` (reads) are ever retried, and only on transport
   failures. Never mark register/renew/transfer or anything that charges as idempotent.
 - Response codes come from the OpenSRS docs (domains.opensrs.guide `codes` page), not memory.
