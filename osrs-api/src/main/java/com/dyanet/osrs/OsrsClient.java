@@ -152,9 +152,9 @@ public class OsrsClient {
     /**
      * Raw send receive - one of two methods that executes network operations
      * 
-     * @param HttpPost
-     * @return String
-     * @throws OsrsException
+     * @param post the signed HTTP POST to execute
+     * @return the raw response body
+     * @throws OsrsException if the request fails
      */
     protected String sendReceive(HttpPost post) throws OsrsException {
 

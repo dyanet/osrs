@@ -19,9 +19,23 @@ API
 4. A few basic tests
 5. High-performance Apache HTTPClient
 
+Installation
+------------
+Maven Central (from 0.9.4):
+
+```xml
+<dependency>
+  <groupId>com.dyanet.osrs</groupId>
+  <artifactId>osrs-api</artifactId>
+  <version>0.9.4</version>
+</dependency>
+```
+
+Requires Java 21+.
+
 Usage
 -----
-- Checkout the project and build with Maven or download the distribution
+- Add the dependency above, or check out the project and build with Maven
 - Configuration is a simple `.properties` file, selected in this order:
   1. `-Dosrs.config=<path-or-classpath-resource>` &mdash; explicit JVM override
   2. the `OSRS_CONFIG` environment variable, same semantics &mdash; convenient for containers
@@ -43,6 +57,20 @@ Testing
 - `mvn test` (or `mvn verify`) runs the fast, offline unit test suite and enforces a minimum
   instruction coverage bar via JaCoCo (see `osrs-api/pom.xml`)
 - Tests tagged `integration` exercise the live OpenSRS `test` registry over the network and are
-  excluded by default; run them with `mvn verify -Pintegration` (requires valid credentials in
-  `osrs-api/src/test/resources/osrs-test.properties`)
+  excluded by default. Run them with `mvn verify -Pintegration`, pointing `OSRS_CONFIG` at a
+  **private** copy of `osrs-test.properties` with your horizon credentials. Never commit a real
+  key: this repository is public. In CI, run the **CI** workflow manually (Actions → CI → Run
+  workflow); it uses the `OPENSRS_API_KEY` secret, and your key's IP access rules must allow the runner.
+
+Releasing
+---------
+Bump the version in both POMs (no `-SNAPSHOT`) in a PR and merge it to `master`. The **Release**
+workflow builds, tests, signs and uploads the release to the Sonatype Central Portal, then tags
+`v<version>`. The deployment is validated but **not published** until a maintainer clicks
+**Publish** at [central.sonatype.com](https://central.sonatype.com) → Deployments. See
+[AGENTS.md](AGENTS.md#releasing-to-maven-central) for the one-time setup.
+
+License
+-------
+[Apache License 2.0](LICENSE)
 
