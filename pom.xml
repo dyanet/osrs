@@ -21,10 +21,11 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.dyanet.osrs</groupId>
     <artifactId>osrs-parent</artifactId>
-    <version>0.9.4</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>OpenSRS Parent Project</name>
-    <description>Java client for the OpenSRS (Tucows) reseller XML API</description>
+    <description>Java client for the OpenSRS (Tucows) reseller XML API. Parent POM and BOM: import it
+        (type pom, scope import) to align the versions of the com.dyanet.osrs artifacts.</description>
     <url>https://github.com/dyanet/osrs</url>
     <inceptionYear>2012</inceptionYear>
 
@@ -64,29 +65,49 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>21</maven.compiler.release>
-        <jackson.version>2.22.3</jackson.version>
+        <slf4j.version>2.0.20</slf4j.version>
+        <junit.version>5.14.4</junit.version>
+        <jacoco.version>0.8.15</jacoco.version>
+        <!-- JUnit tags excluded by default; -Pintegration runs them (live horizon calls). -->
+        <test.excluded.groups>integration</test.excluded.groups>
+        <!-- Per-module minimum instruction coverage enforced by jacoco:check. -->
+        <jacoco.coverage.minimum>0.80</jacoco.coverage.minimum>
     </properties>
 
+    <!--
+      This POM is also the BOM. dependencyManagement lists only the published com.dyanet.osrs
+      artifacts and their runtime dependencies, so importing it doesn't pin a consumer's test
+      libraries. Test dependencies are declared under <dependencies> below instead.
+    -->
     <dependencyManagement>
         <dependencies>
-            <!-- One version for every Jackson module (core, databind, annotations,
-                 dataformat-xml) so they can't drift apart. -->
             <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>${jackson.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>com.dyanet.osrs</groupId>
+                <artifactId>osrs-api</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>5.14.4</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>com.dyanet.osrs</groupId>
+                <artifactId>osrs-domains</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -140,6 +161,11 @@
                     <artifactId>central-publishing-maven-plugin</artifactId>
                     <version>0.11.0</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -150,15 +176,96 @@
                 <configuration>
                     <encoding>utf-8</encoding>
                     <release>${maven.compiler.release}</release>
+                    <compilerArgs>
+                        <arg>-Xlint:all,-serial,-processing</arg>
+                    </compilerArgs>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${test.excluded.groups}</excludedGroups>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Automatic-Module-Name>${osrs.module.name}</Automatic-Module-Name>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.coverage.minimum}</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+    <!--
+      Published modules. Modules still being written live in the "incubating" profile below:
+      CI builds and tests them (mvn -Pincubating verify), but a release (mvn -Prelease deploy)
+      leaves them out, so nothing half-finished reaches Maven Central. When a module is
+      complete, move it here and add it to dependencyManagement above.
+    -->
     <modules>
         <module>osrs-api</module>
+        <module>osrs-domains</module>
     </modules>
 
     <profiles>
+        <profile>
+            <id>incubating</id>
+            <modules>
+                <module>osrs-transfers</module>
+                <module>osrs-dns</module>
+            </modules>
+        </profile>
+        <!-- Run the live integration tests too: mvn verify -Pintegration -->
+        <profile>
+            <id>integration</id>
+            <properties>
+                <test.excluded.groups></test.excluded.groups>
+            </properties>
+        </profile>
         <!--
           Maven Central release: mvn -Prelease deploy
           Builds sources + javadoc jars, signs everything with GPG, and uploads

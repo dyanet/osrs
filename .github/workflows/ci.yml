@@ -35,11 +35,12 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: maven
 
-      # Offline unit tests plus the JaCoCo coverage gate. Integration tests are
-      # tagged 'integration' and excluded by default (no live OpenSRS
+      # Offline unit tests plus each module's JaCoCo coverage gate, for the
+      # published modules and the incubating ones (-Pincubating). Integration
+      # tests are tagged 'integration' and excluded by default (no live OpenSRS
       # credentials in CI).
       - name: Build, test and measure coverage
-        run: mvn -B verify
+        run: mvn -B verify -Pincubating
 
       # Builds and signs exactly what a release uploads (sources + javadoc jars,
       # GPG signatures, with a throwaway key) so a javadoc error or signing
@@ -53,18 +54,25 @@ jobs:
           gpg --batch --gen-key "$RUNNER_TEMP/key.batch"
           export MAVEN_GPG_KEY="$(gpg --armor --export-secret-keys ci@example.invalid)"
           mvn -B -Prelease verify -DskipTests
-          for f in osrs-api/target/osrs-api-*.jar osrs-api/target/osrs-api-*.pom target/osrs-parent-*.pom; do
-            [ -e "$f" ] || continue
-            gpg --verify "$f.asc" "$f" 2>/dev/null && echo "signed: $f" || { echo "::error::missing or bad signature for $f"; exit 1; }
+          # Published modules: every jar and POM signed, sources and javadoc present.
+          for m in osrs-api osrs-domains; do
+            ls "$m"/target/"$m"-*-sources.jar "$m"/target/"$m"-*-javadoc.jar
+            for f in "$m"/target/"$m"-*.jar "$m"/target/"$m"-*.pom; do
+              gpg --verify "$f.asc" "$f" 2>/dev/null && echo "signed: $f" || { echo "::error::missing or bad signature for $f"; exit 1; }
+            done
           done
-          ls osrs-api/target/osrs-api-*-sources.jar osrs-api/target/osrs-api-*-javadoc.jar
+          f=$(ls target/osrs-parent-*.pom) && gpg --verify "$f.asc" "$f" 2>/dev/null || { echo "::error::parent POM not signed"; exit 1; }
+          # Incubating modules must stay out of a release.
+          if ls osrs-transfers/target/*.asc osrs-dns/target/*.asc 2>/dev/null; then
+            echo "::error::an incubating module was built by the release profile"; exit 1
+          fi
 
       - name: Upload coverage to Codecov
         if: matrix.java == '21'
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: osrs-api/target/site/jacoco/jacoco.xml
+          files: osrs-api/target/site/jacoco/jacoco.xml,osrs-domains/target/site/jacoco/jacoco.xml
           fail_ci_if_error: false
 
   # Live tests against the OpenSRS test (horizon) registry. Manual only
@@ -97,4 +105,4 @@ jobs:
           # lives outside the workspace, so it is never committed or uploaded.
           sed -E "s|^osrs\.key=.*|osrs.key=${OPENSRS_API_KEY}|" \
             osrs-api/src/test/resources/osrs-test.properties > "$OSRS_CONFIG"
-          mvn -B verify -Pintegration
+          mvn -B verify -Pintegration,incubating

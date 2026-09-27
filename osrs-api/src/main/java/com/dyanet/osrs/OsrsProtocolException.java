@@ -19,34 +19,18 @@
 package com.dyanet.osrs;
 
 /**
- * Base class of every exception thrown by the OpenSRS client libraries. It is unchecked.
- *
- * <p>Subclasses say what went wrong:
- * <ul>
- *   <li>{@link OsrsTransportException}: the request didn't get a usable HTTP reply;</li>
- *   <li>{@link OsrsProtocolException}: the reply wasn't a valid {@code OPS_envelope};</li>
- *   <li>{@link OsrsApiException}: OpenSRS answered and reported a failure
- *       ({@code is_success=0}), with its {@code response_code} and {@code response_text}.</li>
- * </ul>
- *
- * <p>Messages never contain the API key, the request signature or request attribute values.
+ * The server replied, but the reply was not a well-formed XCP {@code OPS_envelope}
+ * (for example an HTML error page from a proxy).
  */
-public class OsrsException extends RuntimeException {
+public class OsrsProtocolException extends OsrsException {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * @param message what went wrong
+     * @param cause   the underlying failure, may be {@code null}
      */
-    public OsrsException(String message) {
-        super(message);
-    }
-
-    /**
-     * @param message what went wrong
-     * @param cause   the underlying failure
-     */
-    public OsrsException(String message, Throwable cause) {
+    public OsrsProtocolException(String message, Throwable cause) {
         super(message, cause);
     }
 }

@@ -1,0 +1,14 @@
+# OpenSRS "test" environment configuration template for osrs-api (OsrsConfig.load()).
+#
+# Copy this file somewhere private (it will hold your API key), fill in your reseller
+# username and key, and point the client at it with either
+#   -Dosrs.config=/path/to/osrs-test.properties   or   OSRS_CONFIG=/path/to/osrs-test.properties
+# or put it on the classpath as osrs-test.properties and select it with -Dosrs.env=test.
+# Test and live API keys are different. The live host only accepts allowlisted IPs.
+osrs.host=horizon.opensrs.net
+osrs.sslPort=55443
+osrs.userName=your_reseller_username
+osrs.key=your_api_key
+# Optional, in milliseconds:
+# osrs.connectTimeoutMs=30000
+# osrs.requestTimeoutMs=120000

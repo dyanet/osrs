@@ -3,68 +3,112 @@ OSRS
 [![CI](https://github.com/dyanet/osrs/actions/workflows/ci.yml/badge.svg)](https://github.com/dyanet/osrs/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/dyanet/osrs/branch/master/graph/badge.svg)](https://codecov.io/gh/dyanet/osrs)
 
-A basic framework for connecting to the OpenSRS registry, executing requests and unmarshalling responses into POJOs that can then be consumed in your application.
-
-OpenSRS Java Client and API
+Java client for the OpenSRS (Tucows) reseller XML (XCP) API.
 
 Documentation: https://dyanet.com/osrs/
 
-API
----
+Artifacts
+---------
+All artifacts share the group `com.dyanet.osrs` and one version. Requires Java 21+.
 
-1. Configuration of multiple environments, for example,  `test` and `prod`
-2. Jackson Marshalling and Unmarshalling of XML and envelopes
-3. Public certificate for SSL and MD5 signature
-3. Request and Response model for expansion to other APIs
-4. A few basic tests
-5. High-performance Apache HTTPClient
+| artifactId | What it covers |
+|---|---|
+| `osrs-api` | The base: XML envelope encoding/decoding (nested `dt_assoc`/`dt_array`), request signing, HTTPS transport, configuration, errors, retries, the basic commands that belong to no family (domain `lookup`, `suggest` (name_suggest), `price`, account `balance`, `belongsToRsp`), and `OsrsSession`, an in-order request queue. Only runtime dependency: `slf4j-api`. |
+| `osrs-domains` | Domain commands: deleted domains so far; registration, renewal and management to follow. |
+| `osrs-parent` | Parent POM, also usable as a BOM to keep versions aligned. |
 
-Installation
-------------
-Maven Central (from 0.9.4):
+More command families (transfers, DNS) are on the way; this README will get the full list when
+they are published.
 
 ```xml
-<dependency>
-  <groupId>com.dyanet.osrs</groupId>
-  <artifactId>osrs-api</artifactId>
-  <version>0.9.4</version>
-</dependency>
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>com.dyanet.osrs</groupId>
+      <artifactId>osrs-parent</artifactId>
+      <version>1.0.0</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+
+<dependencies>
+  <dependency>
+    <groupId>com.dyanet.osrs</groupId>
+    <artifactId>osrs-domains</artifactId> <!-- brings in osrs-api -->
+  </dependency>
+</dependencies>
 ```
 
-Requires Java 21+.
+1.0.0 replaces the 0.9.x API (`OsrsClient.getInstance`, `GetBalance`, `OsrsResponse`...);
+0.9.4 remains on Maven Central.
 
 Usage
 -----
-- Add the dependency above, or check out the project and build with Maven
-- Configuration is a simple `.properties` file, selected in this order:
-  1. `-Dosrs.config=<path-or-classpath-resource>` &mdash; explicit JVM override
-  2. the `OSRS_CONFIG` environment variable, same semantics &mdash; convenient for containers
-     and `.env`-style deployments that export env vars instead of passing `-D` flags
-     (for example, mount a secret at `/run/secrets/osrs.properties` and
-     `export OSRS_CONFIG=/run/secrets/osrs.properties`)
-  3. otherwise `osrs-<env>.properties` on the classpath, where `<env>` is `-Dosrs.env`
-     (default `test`); `osrs-test.properties` and `osrs-prod.properties` templates ship
-     in `osrs-api/src/main/resources`
-- Set your OpenSRS key and username (`osrs.userName`, `osrs.key`) in the chosen configuration file
-- From within your application,
- - get an instance of the client `OsrsClient.getInstance(false);`
- - create a request object and set its properties `GetBalance req = new GetBalance(); req.setRegistrantIp(null);`
- - read the response `OsrsResponse response = client.sendReceive(req); assertNotNull(response); System.out.println(response);`
- - cast to POJO and read response properties `Balance balance = ((BalanceResponse)response).getBalance();`
+```java
+try (OsrsClient client = OsrsClient.builder()
+        .config(OsrsConfig.test("your_reseller_username", apiKey))   // or OsrsConfig.live(...)
+        .build()) {
+    LookupResult r = client.lookup("example.com");                   // osrs-api
+    PriceQuote p = client.price("example.com", 1, PriceType.NEW);    // osrs-api
+    NameSuggestResult ideas = client.suggest(NameSuggestQuery.of("example", ".com", ".net"));
+    Balance balance = client.balance();                              // osrs-api
+    DeletedDomainsPage gone = Domains.on(client)                     // osrs-domains
+        .deletedDomains(DeletedDomainsQuery.all());
+}
+```
+
+### Sending requests in order
+
+Calls on an `OsrsClient` may run in parallel. When requests depend on each other, send them
+through an `OsrsSession`: it runs them strictly one at a time, in the order submitted, so a slow
+OpenSRS never has several of them in flight. If one fails, everything queued after it is
+cancelled (not sent), and the session reports it in plain language:
+
+```java
+try (OsrsSession session = client.openSession("order 1042")) {
+    session.onFlush(flush -> showToUser(flush.message()));
+    session.submit("register example.com", c -> /* a family command */ c.balance());
+    session.submit(XcpRequest.builder("DOMAIN", "GET_BALANCE").build());
+    session.drain();
+}
+```
+
+> The request "register example.com" did not go through (OpenSRS said: Registration Failed:
+> over quota, code 440). To keep your account consistent, all 2 requests waiting after it were
+> cancelled and not sent: ... Fix the problem, then send them again.
+
+Configuration can also come from a `.properties` file with `OsrsConfig.load()` (or
+`OsrsClient.fromDefaultConfig()`), found in this order:
+1. `-Dosrs.config=<path-or-classpath-resource>`;
+2. the `OSRS_CONFIG` environment variable (handy for containers and mounted secrets);
+3. `osrs-<env>.properties` on the classpath, where `<env>` is `-Dosrs.env` (default `test`).
+
+Templates are in [`config/`](config). Keep the real file private: it holds your API key. The
+test (`horizon.opensrs.net`) and live keys differ, and the live host only accepts allowlisted IPs.
+
+Failures are unchecked exceptions: `OsrsApiException` (OpenSRS reported a failure; carries the
+response code and text), with `OsrsAuthenticationException`, `OsrsUnavailableException` and
+`DomainException` for known codes; `OsrsTransportException` and `OsrsProtocolException` when no
+valid reply arrived; `OsrsRequestCancelledException` for session requests cancelled after an
+earlier failure.
 
 Testing
 -------
-- `mvn test` (or `mvn verify`) runs the fast, offline unit test suite and enforces a minimum
-  instruction coverage bar via JaCoCo (see `osrs-api/pom.xml`)
-- Tests tagged `integration` exercise the live OpenSRS `test` registry over the network and are
-  excluded by default. Run them with `mvn verify -Pintegration`, pointing `OSRS_CONFIG` at a
-  **private** copy of `osrs-test.properties` with your horizon credentials. Never commit a real
-  key: this repository is public. In CI, run the **CI** workflow manually (Actions → CI → Run
-  workflow); it uses the `OPENSRS_API_KEY` secret, and your key's IP access rules must allow the runner.
+- `mvn verify -Pincubating` runs the offline unit tests of every module and enforces JaCoCo
+  coverage minimums.
+- In your own tests, `StubTransport` (in `osrs-api`) replaces the network: it records each
+  request and answers from a script (`StubTransport.reply(...)` builds OpenSRS-shaped replies).
+- Tests tagged `integration` call the live OpenSRS test environment and are excluded by default.
+  Run them with `mvn verify -Pintegration`, pointing `OSRS_CONFIG` at a **private** copy of the
+  test config with your horizon credentials. Never commit a real key: this repository is public.
+  In CI, run the **CI** workflow manually (Actions → CI → Run workflow); it uses the
+  `OPENSRS_API_KEY` secret, and your key's IP access rules must allow the runner.
 
 Releasing
 ---------
-Bump the version in both POMs (no `-SNAPSHOT`) in a PR and merge it to `master`. The **Release**
+Bump the version in the root POM and every module's parent reference (no `-SNAPSHOT`) in a PR and merge it to `master`. The **Release**
 workflow builds, tests, signs and uploads the release to the Sonatype Central Portal, then tags
 `v<version>`. The deployment is validated but **not published** until a maintainer clicks
 **Publish** at [central.sonatype.com](https://central.sonatype.com) → Deployments. See

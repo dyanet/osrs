@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<!DOCTYPE OPS_envelope SYSTEM 'ops.dtd'>
+<OPS_envelope>
+  <header><version>0.9</version></header>
+  <body>
+    <data_block>
+      <dt_assoc>
+        <item key="protocol">XCP</item>
+        <item key="action">REPLY</item>
+        <item key="response_text">Command completed successfully</item>
+        <item key="response_code">200</item>
+        <item key="is_success">1</item>
+        <item key="is_search_completed">1</item>
+        <item key="attributes">
+          <dt_assoc>
+            <item key="lookup">
+              <dt_assoc>
+                <item key="count">2</item>
+                <item key="is_success">1</item>
+                <item key="response_code">200</item>
+                <item key="items">
+                  <dt_array>
+                    <item key="0">
+                      <dt_assoc>
+                        <item key="domain">example.com</item>
+                        <item key="status">taken</item>
+                      </dt_assoc>
+                    </item>
+                    <item key="1">
+                      <dt_assoc>
+                        <item key="domain">example.net</item>
+                        <item key="status">available</item>
+                      </dt_assoc>
+                    </item>
+                  </dt_array>
+                </item>
+              </dt_assoc>
+            </item>
+            <item key="suggestion">
+              <dt_assoc>
+                <item key="count">5</item>
+                <item key="is_success">1</item>
+                <item key="response_code">200</item>
+                <item key="items">
+                  <dt_array>
+                    <item key="0">
+                      <dt_assoc>
+                        <item key="domain">myexample.com</item>
+                        <item key="status">available</item>
+                      </dt_assoc>
+                    </item>
+                  </dt_array>
+                </item>
+              </dt_assoc>
+            </item>
+          </dt_assoc>
+        </item>
+      </dt_assoc>
+    </data_block>
+  </body>
+</OPS_envelope>
