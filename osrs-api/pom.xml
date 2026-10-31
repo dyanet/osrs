@@ -30,7 +30,7 @@
   <url>https://github.com/dyanet/osrs</url>
 
   <properties>
-    <jacoco.version>0.8.15</jacoco.version>
+    <jacoco.version>0.8.16</jacoco.version>
     <!-- JUnit tag groups excluded from the default build; integration tests
          hit the live OpenSRS test registry and are opt-in (see the
          'integration' profile). -->
